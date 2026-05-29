@@ -1,5 +1,13 @@
 # c++笔记
 
+内容来源
+
+- 编程指北：https://csguide.cn/
+- C++学习网：https://www.studycpp.cn/
+
+- DeepSeek：https://chat.deepseek.com/
+- 
+
 # 编译器相关
 
 ## visual studio
@@ -443,9 +451,139 @@ int main()
 
 ## 类型转换
 
-![image-20251211160257558](c++笔记.assets/image-20251211160257558.png)
+### Cpp中推荐使用四个转换操作符
 
+1. static_cast
 
+	**用法**：static_cast<new_type>(expression)
+
+	与C语言中()做强制类型转换基本上是等价的。
+
+	**与（）强制类型转换的区别**：
+
+	static_cast：从 Derived* 到 Base* 的上行转换和从 Base* 到 Derived* 的下行转换是安全的，并且通过编译时检查。然而，试图将 Base* 转换为与之无关的类 Unrelated* 会导致编译错误。
+
+	强制类型转换：将 Base* 转换为与之无关的类 Unrelated* 并不会导致编译错误。
+
+	**主要用于一下场景**
+
+	1.1 基本类型之间的转换
+
+	```cpp
+	int a = 42;
+	double b = static_cast<double>(a); // 将整数a转换为双精度浮点数b
+	```
+
+	1.2 指针类型之间的转换
+
+	```cpp
+	class Base {};
+	class Derived : public Base {};
+	
+	Base* base_ptr = new Derived();
+	Derived* derived_ptr = static_cast<Derived*>(base_ptr); // 将基类指针base_ptr转换为派生类指针derived_ptr
+	```
+
+	1.3 引用类型之间的转换
+
+	```cpp
+	Derived derived_obj;
+	Base& base_ref = derived_obj;
+	Derived& derived_ref = static_cast<Derived&>(base_ref); // 将基类引用base_ref转换为派生类引用derived_ref
+	```
+
+	
+
+2. dynamic_cast
+
+	**用法**： dynamic_cast<new_type>(expression)
+
+	主要应用于父子类层次结构中的安全类型转换。它在运行时会执行类型检查，相较于static_cast更安全。
+
+	**主要应用场景**
+
+	2.1 向下类型转换
+
+	```cpp
+	class Base { virtual void dummy() {} };
+	class Derived : public Base { int a; };
+	
+	Base* base_ptr = new Derived();
+	Derived* derived_ptr = dynamic_cast<Derived*>(base_ptr); // 将基类指针base_ptr转换为派生类指针derived_ptr，如果类型兼容，则成功
+	```
+
+	2.2 用于多态类型检查
+
+	```cpp
+	class Animal { public: virtual ~Animal() {} };
+	class Dog : public Animal { public: void bark() { /* ... */ } };
+	class Cat : public Animal { public: void meow() { /* ... */ } };
+	
+	Animal* animal_ptr = /* ... */;
+	
+	// 尝试将Animal指针转换为Dog指针
+	Dog* dog_ptr = dynamic_cast<Dog*>(animal_ptr);
+	if (dog_ptr) {
+	    dog_ptr->bark();
+	}
+	
+	// 尝试将Animal指针转换为Cat指针
+	Cat* cat_ptr = dynamic_cast<Cat*>(animal_ptr);
+	if (cat_ptr) {
+	    cat_ptr->meow();
+	}
+	```
+
+	
+
+3. const_cast
+
+	**用法**：const_cast<new_type>(expression)
+
+	new_type必须是一个指针、引用或者指向对象类型成员的指针。
+
+	**主要应用场景**
+
+	3.1 需要修改const对象时，用来删除const属性
+
+	```cpp
+	const int a = 42;
+	int* mutable_ptr = const_cast<int*>(&a); // 删除const属性，使得可以修改a的值
+	*mutable_ptr = 43; // 修改a的值
+	```
+
+	3.2 const对象调用非const成员函数
+
+	```cpp
+	class MyClass {
+	public:
+	    void non_const_function() { /* ... */ }
+	};
+	
+	const MyClass my_const_obj;
+	MyClass* mutable_obj_ptr = const_cast<MyClass*>(&my_const_obj); // 删除const属性，使得可以调用非const成员函数
+	mutable_obj_ptr->non_const_function(); // 调用非const成员函数
+	```
+
+	**注意**：上述行为都不是很安全，可能导致未定义的行为，请谨慎使用。
+
+4. reinterpret_cast
+
+	**用法**：reinterpret_cast<new_type>(expression)
+
+	用于不同类型之间进行低级别的转换，它仅仅是重新解析底层比特（也就是指针所指的那片比特位换个类型做解释），不进行任何类型检查。
+
+	**应用场景**
+
+	指针类型之间的转换
+
+	```cpp
+	int a = 42;
+	int* int_ptr = &a;
+	char* char_ptr = reinterpret_cast<char*>(int_ptr); // 将int指针转换为char指针
+	```
+
+----
 
 ## 函数
 
@@ -485,13 +623,6 @@ int main()
 ### 数据类型
 
 浮点型（float）只能确保六位精度
-
-
----
-
-### 强制类型转换
-
-![image-20250104153919681](c++笔记.assets/image-20250104153919681-17359763666601.png)
 
 
 ---
@@ -1675,6 +1806,29 @@ public:
 };
 ```
 
+## extern
+
+
+
+```cpp
+//fileA.cpp
+int i = 1;         //声明并定义全局变量i
+
+//fileB.cpp
+extern int i;    //声明i，链接全局变量
+
+//fileC.cpp
+extern int i = 2;        //错误，多重定义
+int i;                    //错误，这是一个定义，导致多重定义
+main()
+{
+    extern int i;        //正确
+    int i = 5;            //正确，新的局部变量i;
+}
+```
+
+extern C
+
 
 
 ## 常量
@@ -1883,9 +2037,57 @@ int main() {
 
 ## 结构体
 
+### Cpp与C的struct区别
+
+在C语言中，struct只能包含成员变量，C++中还可以包含成员函数。
+
+
+
+### 重载operator<<以打印结构体
+
+```cpp
+#include <iostream>
+
+//定义
+struct Employee
+{
+    int id {};
+    int age {};
+    double wage {};
+};
+
+//重载
+std::ostream& operator<<(std::ostream& out, const Employee& e)
+{
+    out << e.id << ' ' << e.age << ' ' << e.wage;
+    return out;
+}
+
+int main()
+{
+    //初始化
+    // joe.wage will be value-initialized to 0.0
+    Employee joe { 2, 28 }; 
+    
+    //调用
+    std::cout << joe << '\n';
+
+    return 0;
+}
+```
+
+
+
+## 内存对齐
+
+### 内存对齐的好处
+
+有助于提高内存访问速度，因为许多处理器都优化了对齐数据的访问。但是，这可能会导致内存中的一些空间浪费。
+
 ### 取消内存对齐
 
 ```cpp
+// 实例1
 #include <iostream>
 using namespace std;
 
@@ -1901,6 +2103,53 @@ struct Student {
 int main() {
    cout << "结构体大小: " << sizeof(Student) << endl;
    return 0;
+}
+
+// 实例2
+#include <iostream>
+
+#pragma pack(push, 1) // 设置字节对齐为 1 字节，取消自动对齐
+struct UnalignedStruct {
+    char a;
+    int b;
+    short c;
+};
+#pragma pack(pop) // 恢复默认的字节对齐设置
+
+struct AlignedStruct {
+    char a;   // 本来1字节，padding 3 字节
+    int b;    //  4 字节
+    short c;  // 本来 short 2字节，但是整体需要按照 4 字节对齐(成员对齐边界最大的是int 4) 
+              // 所以需要padding 2
+   // 总共: 4 + 4 + 4
+};
+
+struct MyStruct {
+ double a;    // 8 个字节
+ char b;      // 本来占一个字节，但是接下来的 int 需要起始地址为4的倍数
+              //所以这里也会加3字节的padding
+ int c;       // 4 个字节
+ // 总共:  8 + 4 + 4 = 16
+};
+
+struct MyStruct1 {
+ char b;    // 本来1个字节 + 7个字节padding
+ double a;  // 8 个字节
+ int c;     // 本来 4 个字节，但是整体要按 8 字节对齐，所以 4个字节padding
+  // 总共: 8 + 8 + 8 = 24
+};
+
+
+int main() {
+    std::cout << "Size of unaligned struct: " << sizeof(UnalignedStruct) << std::endl; 
+    // 输出：7
+    std::cout << "Size of aligned struct: " << sizeof(AlignedStruct) << std::endl; 
+    // 输出：12，取决于编译器和平台
+    std::cout << "Size of aligned struct: " << sizeof(MyStruct) << std::endl; 
+    // 输出：16，取决于编译器和平台
+    std::cout << "Size of aligned struct: " << sizeof(MyStruct1) << std::endl;
+     // 输出：24，取决于编译器和平台
+    return 0;
 }
 ```
 
@@ -2162,6 +2411,12 @@ int main()
 ```
 
 ## 类和对象
+
+### class与struct的区别
+
+- class中的成员默认为private，struct默认public
+- class继承默认为private，struct默认public
+- class可以用于定义模板参数，struct不能
 
 ### 封装
 

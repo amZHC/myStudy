@@ -83,21 +83,21 @@ fn main(){
 2. 浮点 Floating Point
    
     a. f32:4字节
-   
+
     b. f64(默认):8字节
-   
+
     c. 都有符号(signed)
 
 3. 布尔 Boolean
    
     a. 两个值:true,false
-   
+
     b. 1字节
 
 4. 字符 Character
    
     a. 4字节
-   
+
     b. 表示一个Unicode标量值(Unicode Scalar Value)
 
 ##### 复合类型 Compound
@@ -107,15 +107,15 @@ fn main(){
 1. 元组 Tuple
    
     a. 固定长度
-   
+
     b. 可包含不同类型的数据
 
 2. 数组 Array
    
     a. 固定长度
-   
+
     b. 元素类型相同
-   
+
    ```rust
    fn main() {
        let tup1 = (100, 'A', false);
