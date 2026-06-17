@@ -1,4 +1,4 @@
-#  Rust Rebegin
+# Rust Rebegin
 
 第二次开始学习Rust，希望能有所收获。
 
@@ -9,8 +9,6 @@
 crate
 library crate  (1)
 binary crate  (n)
-
-
 
 ### 猜数游戏
 
@@ -65,8 +63,6 @@ fn main()
 }
 ```
 
-
-
 #### 变量遮蔽 Shadowing
 
 1. 可以用之前变量相同的名字声明一个新变量:第一个变量被第二个变量“遮蔽”了
@@ -99,39 +95,41 @@ fn main(){
 2. 浮点 Floating Point
    
     a. f32:4字节
-
+   
     b. f64(默认):8字节
-
+   
     c. 都有符号(signed)
 
 3. 布尔 Boolean
    
     a. 两个值:true,false
-
+   
     b. 1字节
 
 4. 字符 Character
    
     a. 4字节
-
+   
     b. 表示一个Unicode标量值(Unicode Scalar Value)
 
 ##### 复合类型 Compound
+
+###### Tuple与Array
 
 可以将多个值组合在一个类型
 
 1. 元组 Tuple
    
     a. 固定长度
-
+   
     b. 可包含不同类型的数据
 
 2. 数组 Array
    
     a. 固定长度
-
+   
     b. 元素类型相同
-
+   
    ```rust
    fn main() {
        let tup1 = (100, 'A', false);
@@ -174,10 +172,50 @@ fn main(){
            }
            println!("\t({:?} = {})", a, sum);
        }
-   }
    ```
 
-#### 字符串
+```
+fn main() {
+    //元组 tuple
+    let m_tuple = (1,2,3,4);
+    println!("By tuple: {}",m_tuple.0);
+
+    //数组
+    let m_array:[i32;5] = [1,2,3,4,5];
+    println!("By Array: {}", m_array[4]);
+
+    //get Array length
+    println!("The length of Array: {}",m_array.len());
+
+    //遍历数组
+    for item in m_array.iter()
+    {
+        println!("foreach m_array: {}", item);
+    }
+
+}
+
+// 值传递，原数组在可变情况下在方法内修改也不会影响原数组
+// 此时mut修饰的是array数组在方法内是可变的
+fn foreachArray(mut array:[i32;5])
+{
+    for item in array.iter()
+    {
+        println!("Array content: {}", item);
+    }
+    array[0] = 10;
+}
+
+
+// 地址引用
+// 此时方法内修改array, 会影响到外部变量
+fn change_arr(array:&mut [i32;5])
+{
+
+}
+```
+
+##### 字符串
 
 ```rust
 //1.
@@ -188,8 +226,6 @@ fn main()
     let s1 = "this is &str";
     println!("s1 is {}", s1);
 }
-
-
 
 //2.
 //标准库中的一个公开pub结构体。字符串对象String。
@@ -210,13 +246,12 @@ fn main()
     s3.push('.');
     println!("s3 been changed to {}",s3);
 
-    
+
     //字符串对象和字面量相互转换
     let s4 = "this is &str to String".to_string();
 
     let s5 = s3.as_str();
 }
-
 ```
 
 遍历字符串
@@ -231,6 +266,100 @@ fn main() {
     }
 }
 ```
+
+##### 枚举
+
+```rust
+fn main()
+{
+    let eenum = Week::Friday;
+
+    println!("{:?}", eenum);
+    
+    // Option
+    let price = 250;
+    println!("{:?}",get_diconnect(price));
+
+    // 作为match判断
+    let today = Week::Sunday;
+    what_today(today);
+}
+
+#[derive(Debug)]
+// enum 枚举
+enum Week{
+    Monday,
+    Tuesday,
+    Wednessday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday
+}
+
+/*
+        //带数据类型的枚举
+        enum 枚举名称{
+            varient1(数据类型1),
+            varient2(数据类型2)，
+            ...
+        }
+     */
+enum StudyRoadMap{
+    Name(String),
+    Age(i32)
+}
+
+    /*
+        //Option基于enum，经常用于函数的返回值，可以有返回值，也可以没有返回值
+        enum Option<T>{
+            Some(T),  //用于返回一个值
+            None      // 返回null，用None表示
+        }
+
+     */
+
+fn get_diconnect(price:i32) ->Option<bool>
+{
+    if(price > 100){
+        Some(true)
+    }else {
+        None
+    }
+}
+
+// 作为match的判断值
+fn what_today(day:Week){
+    match day {
+        Week::Monday => {
+            println!("Today is Moday");
+        },
+        Week::Tuesday => {
+            println!("2");
+        },
+        Week::Wednessday => {
+            println!("3");
+        },
+        Week::Thursday => {
+            println!("4");
+        },
+        Week::Friday => {
+            println!("5");
+        },
+        Week::Saturday => {
+            println!("6");
+        },
+        Week::Sunday => {
+            println!("7");
+        }
+    }
+}
+
+```
+
+#### 集合
+
+vector
 
 
 
@@ -248,30 +377,27 @@ fn main() {
    
    ```rust
    fn main(){
-   	println!("Hello World!");
+       println!("Hello World!");
    
-   	another_function();
-   	print_label_message(5，a);
+       another_function();
+       print_label_message(5，a);
    }
    
    fn another_function(){
-   	println!("This is another_function")
+       println!("This is another_function")
    }
    
    fn print_label_message(value: i32, unit_label: char){
-   	println!("Value is {},unit_label is {}",value,unit_label);
+       println!("Value is {},unit_label is {}",value,unit_label);
    }
    ```
    
    函数体由一系列语句组成，可由表达式结尾
-   
-   
-   
 
 ##### 函数的返回值
 
 1. 可以使用return返回
-   
+
 2. 函数最后一个表达式的值（不可以加;作为结尾）
 
 ```rust
@@ -294,15 +420,9 @@ fn main()
 }
 ```
 
-
-
-
-
 #### 语句与表达式
 
 **Rust中不支持+ +(自增)和- -(自减)运算符**
-
-
 
 语句(Statements): 执行某些指令的操作，不返回值
  表达式(Expressions): 计算并返回一个结果值
@@ -495,8 +615,6 @@ fn main()
 }
 ```
 
-
-
 ### 模式匹配
 
 #### match
@@ -591,7 +709,6 @@ fn main() {
         }
     }
 }
-
 ```
 
 #### 穷尽匹配
@@ -611,7 +728,6 @@ match some_u8_value {
     7 => println!("seven"),
     _ => (),
 }
-
 ```
 
 除了`_`通配符，用一个变量来承载其他情况也是可以的。
@@ -672,13 +788,13 @@ fn main() {
     // println!("{:?}", v2.next());
     // println!("{:?}", v2.next());
     // println!("{:?}", v2.next());
-    
+
     //更多例子
     let foo = 'f';
-	assert!(matches!(foo, 'A'..='Z' | 'a'..='z'));
+    assert!(matches!(foo, 'A'..='Z' | 'a'..='z'));
 
-	let bar = Some(4);
-	assert!(matches!(bar, Some(x) if x > 2));
+    let bar = Some(4);
+    assert!(matches!(bar, Some(x) if x > 2));
 }
 ```
 
@@ -749,7 +865,65 @@ fn main() {
 }
 ```
 
-### 结构体方法Method
+### 结构体
+
+```rust
+
+fn main()
+{
+    let s = Study{
+        name:String::from("this is myStruct"),
+        target:String::from("I want do more with Rust"),
+        append: 2
+    };
+
+    println!("{:?}",s);
+
+    let s2 = getInstance(String::from("this fn"), String::from("How to say it"), 3);
+
+    // 单元结构体 是一个类型，有且只有一个值()
+
+
+    // 元组结构体
+    let pair = (String::from("Cpp To Rust"), 1);
+
+    println!("pair 包含 {:?} and {}", pair.0, pair.1);
+
+    // 解构元组结构体
+    let (pair_string, pair_i32) = pair;
+    println!("pair 包含 {:?} and {}", pair_string, pair_i32);
+}
+
+#[derive(Debug)]
+// C语言风格结构体
+struct Study{
+    name:String,
+    target:String,
+    append:i32
+}
+
+// 函数 用于创建一个结构体
+// 不属于任何部分，作用范围内唯一命名
+fn getInstance(name:String, target:String, append:i32) -> Study{
+    return Study { name, target, append };
+}
+
+// implement 实现
+// 方法 基于结构体   
+//因为基于结构体，所以可以重名
+impl Study {
+    fn show_my_name(&self){
+        println!("{}",self.name);
+    }
+
+    // 静态方法
+    fn get_instance(name:String, target:String, append:i32) -> Study{
+        return Study { name, target, append };
+    }
+}
+
+
+```
 
 #### 定义方法
 
@@ -967,9 +1141,146 @@ fn main() {
 }
 ```
 
+#### 特性trait
+
+来自教程，此段代码存在所有权移动的问题
+
+```rust
+use std::fmt::{Display, Formatter};
+
+fn main()
+{
+    let m_book:Book = Book { 
+        name: String::from("bookName"), 
+        id: 2, 
+        author: String::from("niCai"),
+    };
+
+    //m_book.Show();
+
+    // 此时m_book的所有权会移动到show2中
+    show2(m_book);
+}
+
+// 结构体
+struct Book{
+    name:String,
+    id:u32,
+    author:String,
+}
+
+// trait 特质
+// 类似Java中的接口或者cpp中的抽象基类
+// ShowBook 要求实现Show方法
+trait ShowBook {
+    fn Show(&self);
+}
+
+// 为Book实现 ShowBook的trait
+// &self是方法的接收者，表示不可变借用
+impl ShowBook for Book{
+    // 此处具体实现
+    fn Show(&self) {
+        println!("Book name: {}", self.name);
+    }
+}
+
+// 泛型用作函数参数，泛型参数约束
+// T:Display 表示参数T必须实现Display trait
+// 只有实现了Display才能作为参数传入
+// 这是Rust中的 trait bound语法
+fn show2<T:Display>(t:T){
+    println!("show2 : {}",t);
+}
+
+// Display trait实现,来自教程
+// 
+/*
+原代码的问题
+Display应该格式化输出到f，而不是打印到控制台
+虽然编译能通过，但不符合Display的语义
+impl Display for Book {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        println!("impl Display for Book :  Book's ID: {}", self.id);
+        let res = Result::Ok(());
+        res
+    }
+}
+*/
+
+// deepseek认为正确的实现方法
+impl Display for Book {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        // 应该写入f，而不是打印到控制台
+        write!(f, "Book: {} (ID: {}) by {}", self.name, self.id, self.author)
+    }
+}
+```
+
+deepseek推荐的实现方法
+
+```rust
+use std::fmt::{Display, Formatter};
+
+struct Book {
+    name: String,
+    id: u32,
+    author: String,
+}
+
+trait ShowBook {
+    fn show(&self);  // Rust约定使用snake_case命名
+}
+
+impl ShowBook for Book {
+    fn show(&self) {
+        println!("Book name: {}", self.name);
+    }
+}
+
+impl Display for Book {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} (ID: {}) by {}", self.name, self.id, self.author)
+    }
+}
+
+fn show2<T: Display>(t: T) {
+    println!("show2 : {}", t);
+}
+
+fn main() {
+    let m_book = Book { 
+        name: String::from("bookName"), 
+        id: 2, 
+        author: String::from("niCai"),
+    };
+    
+    m_book.show();  // 调用ShowBook trait的方法
+    show2(m_book);  // 调用Display trait的方法
+}
+```
+
+**关键要点总结**
+
+1. **Trait是Rust实现多态的主要方式**
+2. **Display trait用于格式化输出**（与`{}`配合）
+3. **Debug trait用于调试输出**（与`{:?}`配合）
+4. **Trait bound限制泛型类型必须实现特定trait**
+5. **实现trait时要遵循其语义**（如`fmt`应该写入`Formatter`）
+
+
+
 
 
 ### 所有权
+
+所有权只发生在堆类型的数据上，栈数据不具备该特性，默认为值传递。
+
+#### 借用
+
+
+
+
 
 #### 引用
 
@@ -996,8 +1307,6 @@ fn greet_rust(g1: &String, g2: &String) {
 
 ![image-20250603150403934](Rust Rebegin.assets/image-20250603150403934-17489342453227.png)
 
-
-
 ![image-20250604110125560](Rust Rebegin.assets/image-20250604110125560-17490060875801.png)
 
 ```rust
@@ -1018,8 +1327,6 @@ fn main() {
 
     println!("{}", x);
 }
-
-
 ```
 
 可变引用提供对数据“唯一的”且“非拥有的”访问
@@ -1035,11 +1342,9 @@ F权限在函数体内不会变化。
 ```rust
 fn main()
 {
-    
+
 }
 ```
-
-
 
 #### 修复所有权常见错误
 
@@ -1181,10 +1486,99 @@ fn main()
 
     println!("in main: {}", name);
 }
-
 ```
 
 
+
+### IO
+
+
+
+
+
+### 元编程
+
+#### 函数宏（Declarative Macros）- macro_rules!
+
+
+
+
+
+#### 过程宏（Procedural Macros）
+
+##### 派生宏（Derive Macros）
+
+###### 基本概念
+
+```rust
+#[derive(Debug)]  // 这是一个派生宏
+struct MyStruct { ... }
+```
+
+- 派生宏是**过程宏**的一种
+
+- 在**编译时**自动为结构体/枚举生成Trait的实现代码
+
+- 属于**代码生成**技术
+
+###### 工作原理
+
+- 编译器读取结构体定义
+
+- 派生宏分析结构体的字段
+
+- 自动生成`impl Debug for MyStruct`的代码
+
+###### 常用派生宏列表
+
+| 派生宏                  | 生成的Trait | 用途     |
+| ----------------------- | ----------- | -------- |
+| `#[derive(Debug)]`      | Debug       | 调试输出 |
+| `#[derive(Clone)]`      | Clone       | 显式复制 |
+| `#[derive(Copy)]`       | Copy        | 隐式复制 |
+| `#[derive(PartialEq)]`  | PartialEq   | 相等比较 |
+| `#[derive(Eq)]`         | Eq          | 完全相等 |
+| `#[derive(Hash)]`       | Hash        | 哈希计算 |
+| `#[derive(Default)]`    | Default     | 默认值   |
+| `#[derive(PartialOrd)]` | PartialOrd  | 偏序比较 |
+| `#[derive(Ord)]`        | Ord         | 全序比较 |
+
+###### 与手动实现对比
+
+```rust
+// 使用派生宏（推荐）
+#[derive(Debug)]
+struct Book { id: u32 }
+
+// 手动实现（不推荐，代码冗长）
+impl Debug for Book {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "Book {{ id: {} }}", self.id)
+    }
+}
+```
+
+
+
+###### 自定义派生宏（进阶）
+
+```rust
+// 使用第三方库创建自定义派生宏
+use proc_macro::TokenStream;
+
+#[proc_macro_derive(MyTrait)]
+pub fn my_trait_derive(input: TokenStream) -> TokenStream {
+    // 生成代码的逻辑
+}
+```
+
+
+
+##### 属性宏（Attribute Macros）
+
+
+
+##### 函数式宏（Function-like Macros）
 
 
 
@@ -1223,25 +1617,25 @@ Rust 是一门编译语言，因此它的效率可以媲美 C 或 C++ 语言。
 3. 进入/opt/homebrew/Cellar/rustup-init/1.24.3/bin
 
 4. 运行 rustup-init
-
-	```cmd
-	1) Proceed with installation (default) //默认安装
-	2) Customize installation //自定义安装
-	3) Cancel installation	//取消安装
-	
-	我选的是第 1 个。
-	```
+   
+   ```cmd
+   1) Proceed with installation (default) //默认安装
+   2) Customize installation //自定义安装
+   3) Cancel installation    //取消安装
+   
+   我选的是第 1 个。
+   ```
 
 5. 屏幕出现成功字样 **Rust is installed now. Great!**
 
 6. 最后执行这句，让环境变量生效 source $HOME/.cargo/env
 
 7. 再打开终端
-
-	```cmd
-	rustc -V
-	屏幕输出  rustc 1.59.0
-	```
+   
+   ```cmd
+   rustc -V
+   屏幕输出  rustc 1.59.0
+   ```
 
 出现上面的提示，证明你的 Rust 环境安装好了。
 
@@ -1256,23 +1650,24 @@ Rust 是一门编译语言，因此它的效率可以媲美 C 或 C++ 语言。
 3. 创建 rust 源代码文件，它是用 **.rs** 作为扩展名的。
 
 4. 在 hello.rs 中，输入
+   
+   ```rust
+   fn main(){
+       println!("Hello Rust!")
+   }
+   ```
+   
+   > fn - Rust 语言使用 `fn` 关键字定义函数。
+   > 
+   > `main()` 函数是一个预定义的主函数，充当 Rust 程序的入口点，每个语言都会有自己的 `main()` 函数。
+   > 
+   > println!() 是 Rust 语言中的一个 **预定义的宏**。它用于将传递给它的参数输出到 **标准输出**。
+   
+   注：Rust 语言中的 **宏** 都会以 **感叹号 ( `!` )** 结尾。以后看到以 `!` 结尾的类似函数调用，都是 **宏调用**。Rust 提供了一个功能非常强大的 **宏** 体系，通过这些 **宏**，我们可以很方便的进行 **元编程**。Rust 中的 **宏** 有点类似于 **函数**。可以将 **宏** 理解为 **函数的加强版**。
 
-	```rust
-	fn main(){
-	    println!("Hello Rust!")
-	}
-	```
+5. 使用 **rustc hello.rs**,编译出一个以 hello 为名字的二进制的可执行文件
 
-	> fn - Rust 语言使用 `fn` 关键字定义函数。
-	>
-	> `main()` 函数是一个预定义的主函数，充当 Rust 程序的入口点，每个语言都会有自己的 `main()` 函数。
-	>
-	> println!() 是 Rust 语言中的一个 **预定义的宏**。它用于将传递给它的参数输出到 **标准输出**。
-
- 注：Rust 语言中的 **宏** 都会以 **感叹号 ( `!` )** 结尾。以后看到以 `!` 结尾的类似函数调用，都是 **宏调用**。Rust 提供了一个功能非常强大的 **宏** 体系，通过这些 **宏**，我们可以很方便的进行 **元编程**。Rust 中的 **宏** 有点类似于 **函数**。可以将 **宏** 理解为 **函数的加强版**。
-
-1. 使用 **rustc hello.rs**,编译出一个以 hello 为名字的二进制的可执行文件
-2. 运行 ./hello,屏幕输出 Hello Rust!
+6. 运行 ./hello,屏幕输出 Hello Rust!
 
 #### 第 4 章 Rust 的数据类型
 
@@ -1329,14 +1724,14 @@ Rust 语言中有四种标量数据类型：
 - 有符号整型，英文 `signed`，既可以存储正数，也可以存储负数。
 - 无符号整型，因为 `unsigned`，只能存储正数。
 
-| 大小    | 有符号 | 无符号 |
-| ------- | ------ | ------ |
-| 8 bit   | i8     | u8     |
-| 16 bit  | i16    | u16    |
-| 32 bit  | i32    | u32    |
-| 64 bit  | i64    | u64    |
-| 128 bit | i128   | u128   |
-| Arch    | isize  | usize  |
+| 大小      | 有符号   | 无符号   |
+| ------- | ----- | ----- |
+| 8 bit   | i8    | u8    |
+| 16 bit  | i16   | u16   |
+| 32 bit  | i32   | u32   |
+| 64 bit  | i64   | u64   |
+| 128 bit | i128  | u128  |
+| Arch    | isize | usize |
 
 按照存储空间来说，整型可以进一步划分为 `1字节`、`2字节`、`4字节`、`8字节`、`16字节`。
 
@@ -1384,7 +1779,7 @@ let price6:i32=66.66
 
 我们已经计算了 i8 的最大值是 127。我给一个更大的数值会如何呢？
 
-```
+```rust
 let price7:i8=192;
 println!("price7 is {}", price7);
 
@@ -1499,6 +1894,7 @@ fn main() {
     let Study = "";
     print!("{}",study)
 }
+
 报错如下：
     print!("{}",study)
     ^^^^^ help: a local variable with a similar name exists (notice the capitalization): `Study`
@@ -1802,54 +2198,54 @@ Rust 语言支持以下四种运算符
 
 算术运算符
 
-| 名称 | 运算符 |
-| ---- | ------ |
-| 加   | +      |
-| 减   | -      |
-| 乘   | *      |
-| 除   | /      |
-| 求余 | %      |
+| 名称  | 运算符 |
+| --- | --- |
+| 加   | +   |
+| 减   | -   |
+| 乘   | *   |
+| 除   | /   |
+| 求余  | %   |
 
 > **注：Rust 语言不支持自增自减运算符 `++` 和 `--`**
 
 **关系运算符**
 
-| 名称     | 运算符 | 说明                                                     |
-| -------- | ------ | -------------------------------------------------------- |
-| 大于     | >      | 如果左操作数大于右操作数则返回 true 否则返回 false       |
-| 小于     | <      | 如果左操作数小于于右操作数则返回 true 否则返回 false     |
-| 大于等于 | >=     | 如果左操作数大于或等于右操作数则返回 true 否则返回 false |
-| 小于等于 | <=     | 如果左操作数小于或等于右操作数则返回 true 否则返回 false |
-| 等于     | ==     | 如果左操作数等于右操作数则返回 true 否则返回 false       |
-| 不等于   | !=     | 如果左操作数不等于右操作数则返回 true 否则返回 false     |
+| 名称   | 运算符 | 说明                                 |
+| ---- | --- | ---------------------------------- |
+| 大于   | >   | 如果左操作数大于右操作数则返回 true 否则返回 false    |
+| 小于   | <   | 如果左操作数小于于右操作数则返回 true 否则返回 false   |
+| 大于等于 | >=  | 如果左操作数大于或等于右操作数则返回 true 否则返回 false |
+| 小于等于 | <=  | 如果左操作数小于或等于右操作数则返回 true 否则返回 false |
+| 等于   | ==  | 如果左操作数等于右操作数则返回 true 否则返回 false    |
+| 不等于  | !=  | 如果左操作数不等于右操作数则返回 true 否则返回 false   |
 
 **逻辑运算符**
 
-| 名称   | 运算符 | 说明                                                     |
-| ------ | ------ | -------------------------------------------------------- |
-| 逻辑与 | &&     | 两边的条件表达式都为真则返回 true 否则返回 false         |
-| 逻辑或 | \|\|   | 两边的条件表达式只要有一个为真则返回 true 否则返回 false |
-| 逻辑非 | !      | 如果表达式为真则返回 false 否则返回 true                 |
+| 名称  | 运算符  | 说明                                 |
+| --- | ---- | ---------------------------------- |
+| 逻辑与 | &&   | 两边的条件表达式都为真则返回 true 否则返回 false     |
+| 逻辑或 | \|\| | 两边的条件表达式只要有一个为真则返回 true 否则返回 false |
+| 逻辑非 | !    | 如果表达式为真则返回 false 否则返回 true         |
 
 **位运算**
 
-| 名字 | 运算符 | 说明                                           |
-| ---- | ------ | ---------------------------------------------- |
-| 位与 | &      | 相同位都是 1 则返回 1 否则返回 0               |
-| 位或 | \|     | 相同位只要有一个是 1 则返回 1 否则返回 0       |
-| 异或 | ^      | 相同位不相同则返回 1 否则返回 0                |
-| 位非 | !      | 把位中的 1 换成 0 ， 0 换成 1                  |
-| 左移 | <<     | 操作数中的所有位向左移动指定位数，右边的位补 0 |
-| 右移 | >>     | 操作数中的所有位向右移动指定位数，左边的位补 0 |
+| 名字  | 运算符 | 说明                       |
+| --- | --- | ------------------------ |
+| 位与  | &   | 相同位都是 1 则返回 1 否则返回 0     |
+| 位或  | \|  | 相同位只要有一个是 1 则返回 1 否则返回 0 |
+| 异或  | ^   | 相同位不相同则返回 1 否则返回 0       |
+| 位非  | !   | 把位中的 1 换成 0 ， 0 换成 1     |
+| 左移  | <<  | 操作数中的所有位向左移动指定位数，右边的位补 0 |
+| 右移  | >>  | 操作数中的所有位向右移动指定位数，左边的位补 0 |
 
 #### 第13章 条件判断
 
-| 条件判断语句                | 说明                                                        |
-| --------------------------- | ----------------------------------------------------------- |
-| `if` 语句                   | `if` 语句用于模拟现实生活中的 **如果…就…**                  |
-| `if...else` 语句            | `if...else` 语句用于模拟 **如果…就…否则…**                  |
-| `else...if` 和嵌套`if` 语句 | 嵌套`if` 语句用于模拟 **如果…就…如果…就…**                  |
-| `match` 语句                | `match` 语句用于模拟现实生活中的 **老师点名** 或 **银行叫** |
+| 条件判断语句                 | 说明                                      |
+| ---------------------- | --------------------------------------- |
+| `if` 语句                | `if` 语句用于模拟现实生活中的 **如果…就…**             |
+| `if...else` 语句         | `if...else` 语句用于模拟 **如果…就…否则…**         |
+| `else...if` 和嵌套`if` 语句 | 嵌套`if` 语句用于模拟 **如果…就…如果…就…**            |
+| `match` 语句             | `match` 语句用于模拟现实生活中的 **老师点名** 或 **银行叫** |
 
 **if 语句**
 
@@ -2261,6 +2657,826 @@ let name:String = String::from("从0到Go语言微服务架构师");
   |println!("调用show_name函数后: {}",name);
   |  ^^^^ value borrowed here after move
 ```
+
+#### 第18章 所有权
+
+因为变量要负责释放它们拥有的资源，所以**资源只能拥有一个所有者**。这也防止了资源的重复释放。注意并非所有变量都拥有资源（例如引用）。
+
+在进行赋值（let a = b）或通过值来传递函数参数（foo(a)）的时候，资源的所有权（ownership）会发生转移。按照 Rust 的规范，这被称为资源的移动（move）。
+
+在移动资源之后，原来的所有者不能再被使用，这可避免悬挂指针（dangling pointer）的产生。
+
+内存分为两大类：**栈(stack)** 和 **堆(heap)**
+
+**栈**
+
+它是一种 **后进先出** 的机制，类似我们日常的落盘子，只能一个一个向上方，然后从最上面拿一个盘子。一个变量要放到栈上，那么它的大小在编译时就要明确。i32 
+类型的变量，它就占用 4 个字节。Rust 
+中可以放到栈上的数据类型，他们的大小都是固定的。如果是字符串，在运行时才会赋值的变量，在编译期的时候大小是未知或不确定的。所以字符串类型存储在**堆**上。
+
+**堆**
+
+用于编译时大小未知或不确定的，只有运行时才能确定的数据。在**堆**上存储一些动态类型的数据。**堆**是不受系统管理的，是用户自己管理的，也增加了内存溢出的风险。
+
+**所有权**
+
+所有权就是值一个东西归属谁。Rust 中一个变量对应一个值，变量就称为这个值得**所有者**。
+
+let name="从0到Go语言微服务架构师";  
+
+这句话的意思就是，”从 0 到 Go 语言微服务架构师” 这个值所在内存块由变量 name 所有。
+
+Rust 中，只能由一个所有者，不允许两个同时指向同一块内存区域。变量必须指向不同的内存区域。
+
+**转让所有权**
+
+类似我们人类把一个东西送人或丢弃。
+
+以下几种方式转让所有权：
+
+1. 把一个变量赋值给另一个变量。
+
+     
+
+```rust
+fn main() {  
+ // 栈分配的整型  
+ let a = 88;  
+ // 将 `a` *复制*到 `b`——不存在资源移动  
+ let b = a;  
+ // 两个值各自都可以使用  
+ println!("a {}, and b {}", a, b);
+
+let v1 = vec!["Go语言极简一本通","Go语言微服务架构核心22讲","从0到Go语言微服务架构师"];  
+let v2 =v1;  
+println!("{:?}",v1); 
+```
+
+- v1 拥有堆上数据的所有权。（每次只能有一个变量对堆上数据有所有权）
+
+- v2=v1 v2 拥有了堆上数据的所有权。
+
+- v1 已经没有对数据的所有权了，所以再使用 v1 会报错。
+
+- 如果 Rust 检查到 2 个变量同时拥有堆上内存的所有权。会报错如上。
+2. 把变量传递给函数参数。
+
+```rust
+fn show(v:Vec<&str>){  
+    println!("v {:?}",v)  
+}  
+fn main() {  
+    let studyList = vec!["Go语言极简一本通","Go语言微服务架构核心22讲","从0到Go语言微服务架构师"];  
+    //studyList 拥有堆上数据管理权  
+    let studyList2 = studyList;  
+    // studyList 将所有权转义给了 studyList2  
+    show(studyList2);  
+    // studyList2 将所有权转让给参数 v,studyList2 不再可用。  
+    println!("studyList2 {:?}",studyList2);  
+    //studyList2 已经不可用。  
+}  
+
+error[E0382]: borrow of moved value: `studyList2`  
+| let studyList2 = studyList; // studyList 将所有权转义给了 studyList2  
+| ---------- move occurs because `studyList2` has type `Vec<&str>`, which does not implement the `Copy` trait  
+| show(studyList2); // studyList2 将所有权转让给参数 v,studyList2 不再可用。  
+| ---------- value moved here  
+| println!("studyList2 {:?}",studyList2);//studyList2 已经不可用。  
+| ^^^^^^^^^^ value borrowed here after move  
+```
+
+
+
+3. 函数中的返回值。
+
+```rust
+fn show2(v:Vec<&str>) -> Vec<&str>{  
+    println!("v {:?}",v);  
+    return v;  
+}  
+
+fn main() {  
+    let studyList3 = vec!["Go语言极简一本通","Go语言微服务架构核心22讲","从0到Go语言微服务架构师"];  
+    let studyList4 = studyList3;  
+    let result = show2(studyList4);  
+    println!("result {:?}",result);  
+    //输出 result ["Go语言极简一本通", "Go语言微服务架构核心22讲", "从0到Go语言微服务架构师"]  
+}  
+```
+
+**基础数据类型与所有权**
+
+所有权只会发生在堆上分配的数据，基础数据类型(整型，浮点型，布尔，字符)存储在栈上，所以没有所有权的概念。基础类型可以认为是值拷贝，在内存上另外的地方，存储和复制来的数据，然后让新的变量指向它。
+
+let a = 88;  
+let b = a;  
+println!("a {}, and b {}", a, b);  
+
+**总结**
+赋值并不是唯一涉及移动的操作。值在作为参数传递或从函数返回时也会被移动。
+
+
+
+#### 第19章 Borrowing 借用所有权
+
+生活中，我们对工具有所有权，但是也不妨碍我们可以把工具借给别人甚至租用给别人，别人用完了，要还给你的。
+
+Rust 中，**Borrowing（借用）**，就是一个函数中的变量传递给另外一个函数作为参数暂时使用。也会要求函数参数离开自己作用域的时候将**所有权** 还给当初传递给它的变量（好借好还，再借不难嘛!）。
+
+```
+&变量名  //要把参数定义的时候这样定义。
+```
+
+例子如下:
+
+```rust
+fn show(v:&Vec<&str>){
+    println!("v:{:?}",v)
+}
+fn main() {
+    let studyList = vec!["Go语言极简一本通","Go语言微服务架构核心22讲","从0到Go语言微服务架构师"];
+    let studyList2 =studyList;
+    show2(&studyList2);
+    println!("studyList2:{:?}",studyList2); //我们看到，函数show使用完v2后，我们仍然可以继续使用
+}
+//输出
+v:["Go语言极简一本通", "Go语言微服务架构核心22讲", "从0到Go语言微服务架构师"]
+v2:["Go语言极简一本通", "Go语言微服务架构核心22讲", "从0到Go语言微服务架构师"]
+```
+
+**可变的借用**
+
+上面我们的例子可以说都是只读的，我们看下面:
+
+```rust
+fn show2(v:&Vec<&str>){
+    v[0]="第一个充电项目已完成";
+    println!("v:{:?}",v)
+}
+报错如下:
+error[E0596]: cannot borrow `*v` as mutable, as it is behind a `&` reference
+| fn show2(v:&Vec<&str>){
+| ---------- help: consider changing this to be a mutable reference: `&mut Vec<&str>`
+| v[0]="第一个充电项目已完成";
+| ^ `v` is a `&` reference, so the data it refers to cannot be borrowed as mutable
+```
+
+报错的原因：我们的这个借用不可以是可变的。那么 Rust 中，如果想要让一个变量是可变的，只能在前面加上 **mut** 关键字。
+
+修改如下:
+
+```rust
+fn show2(v:&mut Vec<&str>){
+    v[0]="第一个充电项目已完成";
+    println!("v:{:?}",v)
+}
+fn main() {
+ let mut studyList3 = vec!["Go语言极简一本通","Go语言微服务架构核心22讲","从0到Go语言微服务架构师"];
+ println!("studyList3:{:?}",studyList3);
+ show2(&mut studyList3);
+ println!("调用后，studyList3:{:?}",studyList3);
+ }
+ //输出
+studyList3:["Go语言极简一本通", "Go语言微服务架构核心22讲", "从0到Go语言微服务架构师"]
+v:["第一阶段学习已完成", "Go语言微服务架构核心22讲", "从0到Go语言微服务架构师"]
+调用后，studyList3:["第一阶段学习已完成", "Go语言微服务架构核心22讲", "从0到Go语言微服务架构师"]
+```
+
+如果我们要在**Borrowing（借用）**的时候改变其中的值：
+
+1. 变量要用**mut**关键字。
+2. 函数参数为可变的要用 **&mut** 关键字。
+3. 传递参数的时候，也要用 **&mut** 关键字。
+
+
+
+#### 第20章 Slice(切片)
+
+切片是只向一段连续内存的指针。在 Rust 中，连续内存够区间存储的数据结构：数组(array)、字符串(string)、向量(vector)。切片可以和它们一起使用，切片也使用数字索引访问数据。下标索引从**0**开始。slice 可以指向数组的一部分，越界的下标会引发致命错误（panic）。
+
+**切片**是运行时才能确定的，并不像数组那样编译时就已经确定了。
+
+**切片的定义**
+
+```rust
+let 切片值 = &变量[起始位置..结束位置]
+```
+
+1. [起始位置..结束位置]，这是一个左闭右开的区间。
+2. **起始位置**最小值是**0**。
+3. **结束位置**是数组、向量、字符串的长度。
+
+```rust
+fn main() {
+   let mut v = Vec::new();
+   v.push("Go语言极简一本通");
+   v.push("Go语言微服务架构核心22讲");
+   v.push("从0到Go语言微服务架构师");
+   println!("len:{:?}",v.len());
+   let s1=&v[1..3];
+   println!("s1:{:?}",s1);
+}
+//输出
+len:3
+s1:["Go语言微服务架构核心22讲", "从0到Go语言微服务架构师"]
+```
+
+**切片当参数**
+
+切片通过引用的方式传递给函数。
+
+```rust
+fn show_slice(s:&[&str]){
+   println!("show_slice函数内:{:?}",s);
+}
+show_slice(s1);//把上面的s1传递给函数show_slice
+//输出 show_slice函数内:["Go语言微服务架构核心22讲", "从0到Go语言微服务架构师"]
+```
+
+**可变切片**
+
+如果我们声明的原数据是可变的，同时定义切片也有**&mut**关键字，就可以更改切片元素来更改元数据了。
+
+```rust
+fn modify_slice(s: &mut [&str]) {
+   s[0] = "这个阶段已学习完毕";
+   println!("modify_slice:{:?}", s);
+}
+let mut v2 = Vec::new();
+v2.push("Go语言极简一本通");
+v2.push("Go语言微服务架构核心22讲");
+v2.push("从0到Go语言微服务架构师");
+println!("modify_slice之前:{:?}", v2);
+
+modify_slice(&mut v2[1..3]);
+println!("modify_slice之后:{:?}", v2);
+
+//输出
+modify_slice之前:["Go语言极简一本通", "Go语言微服务架构核心22讲", "从0到Go语言微服务架构师"]
+modify_slice:["这个阶段已学习完毕", "从0到Go语言微服务架构师"]
+modify_slice之后:["Go语言极简一本通", "这个阶段已学习完毕", "从0到Go语言微服务架构师"]
+```
+
+
+
+#### 第21章 结构体(Struct)
+
+**结构体（ `struct` ）**可以由各种不同类型组成。使用 struct 关键字来创建。**struct** 是 **structure** 的缩写。结构体可以作为另一个结构体的字段。结构体是可以嵌套的。
+
+- 元组结构体（tuple struct），事实上就是具名元组而已。
+
+  ```tust
+  struct Pair(String, i32);
+  ```
+
+- 经典的 C 语言风格结构体（C struct）。
+
+  ```rust
+  struct 结构体名称 {
+      ...
+  }
+  ```
+
+- 单元结构体（unit struct），不带字段，在泛型中很有用。
+
+  ```rust
+  struct Unit;
+  ```
+
+**定义结构体**
+
+```rust
+struct 结构体名称 {
+    字段1:数据类型,
+    字段2:数据类型,
+    ...
+}
+```
+
+**创建结构体实例**
+
+```rust
+let 实例名称 = 结构体名称{
+    field1:value1,
+    field2:value2
+    ...
+};
+```
+
+结构体初始化，其实就是对 **结构体中的各个元素进行赋值**。
+
+```rust
+#[derive(Debug)]
+struct Study {
+    name: String,
+    target: String,
+    spend: i32,
+}
+
+fn main() {
+    let s = Study {
+        name: String::from("从0到Go语言微服务架构师"),
+        target: String::from("全面掌握Go语言微服务落地，代码级一次性解决微服务和分布式系统。"),
+        spend: 3,
+    };
+    println!("{:?}", s);
+    //输出 Study { name: "从0到Go语言微服务架构师", target: "全面掌握Go语言微服务落地，代码级一次性解决微服务和分布式系统。", spend: 3 }
+}
+```
+
+**访问实例属性**
+
+```rust
+实例名称.属性
+
+println!("{}",s.name);//输出 从0到Go语言微服务架构师
+```
+
+**修改结构体实例**
+
+结构体实例默认是**不可修改**的，如果想修改结构体实例，声明时使用**mut**关键字。
+
+```rust
+let mut s2 = Study {
+        name: String::from("从0到Go语言微服务架构师"),
+        target: String::from("全面掌握Go语言微服务落地，代码级一次性解决微服务和分布式系统。"),
+        spend: 3,
+    };
+ s2.spend=7;
+ println!("{:?}",s2);//输出 Study { name: "从0到Go语言微服务架构师", target: "全面掌握Go语言微服务落地，代码级一次性解决微服务和分布式系统。", spend: 7 }
+```
+
+**结构体做参数**
+
+```rust
+fn show(s: Study) {
+    println!(
+        "name is :{} target is {} spend is{}",
+        s.name, s.target, s.spend
+    );
+}
+```
+
+**结构体作为返回值**
+
+```rust
+fn get_instance(name: String, target: String, spend: i32) -> Study {
+    return Study {
+        name,
+        target,
+        spend,
+    };
+}
+
+let s3 = get_instance(
+    String::from("Go语言极简一本通"),
+    String::from("学习Go语言语法，并且完成一个单体服务"),
+    5,
+);
+println!("{:?}", s3);
+//输出 Study { name: "Go语言极简一本通", target: "学习Go语言语法，并且完成一个单体服务", spend: 5 }
+```
+
+**方法**
+
+方法（method）是依附于对象的函数。这些方法通过关键字 self 来访问对象中的数据和其他。方法在 impl 代码块中定义。
+
+> 与函数的区别
+>
+> 函数：可以直接调用，同一个程序不能出现 2 个相同的函数签名的函数，应为函数不归属任何 owner。
+>
+> 方法：归属某一个 owner，不同的 owner 可以有相同的方法签名。
+
+```rust
+impl 结构体{
+    fn 方法名(&self,参数列表) 返回值 {
+        //方法体
+    }
+}
+```
+
+impl 是 implement 的缩写。意思是 “实现”的意思。
+
+self 是“自己”的意思，&self 表示当前结构体的实例。 &self 也是结构体普通方法固定的第一个参数，其他参数可选。
+
+结构体方法的作用域仅限于结构体内部。
+
+```rust
+impl Study {
+    fn get_spend(&self) -> i32 {
+        return self.spend;
+    }
+}
+
+println!("spend {}", s3.get_spend());
+//输出 spend 5
+```
+
+**结构体静态方法**
+
+```rust
+fn 方法名(参数: 数据类型,...) -> 返回值类型 {
+      // 方法体
+   }
+
+调用方式
+结构体名称::方法名(参数列表)
+impl Study {
+    ...
+    fn get_instance_another(name: String, target: String, spend: i32) -> Study {
+        return Study {
+            name,
+            target,
+            spend,
+        };
+    }
+}
+
+let s4 = Study::get_instance_another(
+    String::from("Go语言极简一本通"),
+    String::from("学习Go语言语法，并且完成一个单体服务"),
+    5,
+);
+```
+
+单元结构体
+unit type 是一个类型，有且仅有一个值：()，单元类型()类似 c/c++/java 语言中的  void。当一个函数并不需要返回值的时候，rust 则返回()。但语法层面上，void  仅仅只是一个类型，该类型没有任何值；而单元类型()既是一个类型，同时又是该类型的值。
+
+实例化一个元组结构体
+
+```rust
+let pair = (String::from("从0到Go语言微服务架构师"), 1);
+```
+
+访问元组结构体的字段
+
+```rust
+println!("pair 包含 {:?} and {:?}", pair.0, pair.1);
+```
+
+解构一个元组结构体
+
+```rust
+let (study, spend) = pair;
+println!("pair contains {:?} and {:?}", study, spend);
+```
+
+
+
+#### 第22章 Enum(枚举)
+
+枚举 **enum** 关键字允许创建一个从数个不同取值中选其一的枚举类型（enumeration）。任何一个在 struct 中合法的取值在 enum 中也合法。
+
+在日常生活中很常见。比如：1 年有 12 个月，1 周有 7 天。
+
+**枚举的定义**
+
+```rust
+enum 枚举名称{
+ variant1,
+ variant2,
+ ...
+}
+```
+
+**使用枚举**
+
+```rust
+枚举名称::variant
+
+#[derive(Debug)]
+enum RoadMap {
+    Go语言极简一本通,
+    Go语言微服务架构核心22讲,
+    从0到Go语言微服务架构师,
+}
+
+//这是Go语言学习3个阶段
+
+fn main() {
+   let level = RoadMap::从0到Go语言微服务架构师;
+    println!("level---{:?}",level);
+}
+```
+
+`#[derive(Debug)]` 注解的作用，就是让 `派生自`Debug`。
+
+**Option 枚举**
+
+```rust
+enum Option<T> {
+   Some(T),      // 用于返回一个值
+   None          // 用于返回 null,用None来代替。
+}
+```
+
+`Option` 枚举经常用在函数中的`返回值`，它可以表示有返回值，也可以用于表示没有返回值。如果有返回值。可以使用返回 Some(data)，如果函数没有返回值，可以返回 None。
+
+```rust
+fn getDiscount(price: i32) -> Option<bool> {
+    if price > 100 {
+        Some(true)
+    } else {
+        None
+    }
+}
+
+let p=666;  //输出 Some(true)
+// let p=6;//输出 None
+let result = getDiscount(p);
+println!("{:?}",result)
+```
+
+**match 语句**
+
+判断一个枚举变量的值，唯一操作符就是 match。
+
+```rust
+fn print_road_map(r:RoadMap){
+    match r {
+        RoadMap::Go语言极简一本通=>{
+            println!("Go语言极简一本通");
+        },
+        RoadMap::Go语言微服务架构核心22讲=>{
+            println!("Go语言微服务架构核心22讲");
+        },
+        RoadMap::从0到Go语言微服务架构师=>{
+            println!("从0到Go语言微服务架构师");
+        }
+    }
+}
+print_road_map(RoadMap::Go语言极简一本通);//输出 Go语言极简一本通
+print_road_map(RoadMap::Go语言微服务架构核心22讲);//输出 Go语言微服务架构核心22讲
+print_road_map(RoadMap::从0到Go语言微服务架构师);//输出 从0到Go语言微服务架构师
+```
+
+**带数据类型的枚举**
+
+```rust
+enum 枚举名称{
+    variant1(数据类型1),
+    variant2(数据类型2),
+    ...
+}
+#[derive(Debug)]
+enum StudyRoadMap{
+    Name(String),
+}
+
+let level3 = StudyRoadMap::Name(String::from("从0到Go语言微服务架构师"));
+match level3 {
+    StudyRoadMap::Name(val)=>{
+        println!("{:?}",val);
+    }
+}
+
+//输出 "从0到Go语言微服务架构师"
+```
+
+
+
+#### 第23章 集合 Collections
+
+Rust 语言标准库提供了通用的数据结构的实现。包括 **向量 （`Vector`）**、**哈希表（ `HashMap` ）**、**哈希集合（ `HashSet` ）** 。
+
+**向量 （`Vector`）**
+
+Rust 在标准库中定义了结构体 `Vec` 用于表示一个向量。向量和数组很相似，只是数组长度是编译时就确定了，定义后就不能改变了，那要么改数组，让他支持可变长度，显然 Rust 没有这么做，它用**向量**这个数据结构，也是在内存中开辟一段连续的内存空间来存储元素。
+
+特点：
+
+- 向量中的元素都是相同类型元素的集合。
+- 长度可变，运行时可以增加和减少。
+- 使用索引查找元素。（索引从 0 开始）
+- 添加元素时，添加到向量尾部。
+- 向量的内存在堆上，长度可动态变化。
+
+**创建向量**
+
+1. `new()` 静态方法用于创建一个结构体 Vec 的实例。
+
+```rust
+let mut 向量的变量名称 = Vec::new();
+```
+
+1. `vec!()` 宏来简化向量的创建。
+
+```rust
+let 向量的变量名称 = vec![val1,val2,...]
+```
+
+向量的使用方法
+
+| 方法       | 说明                        |
+| ---------- | --------------------------- |
+| new()      | 创建一个空的向量的实例      |
+| push()     | 将某个值 T 添加到向量的末尾 |
+| remove()   | 删除并返回指定的下标元素。  |
+| contains() | 判断向量是否包含某个值      |
+| len()      | 返回向量中的元素个数        |
+
+```rust
+let mut v = Vec::new();//调用 Vec 结构的 new() 静态方法来创建向量。
+v.push("Go语言极简一本通");       //通过push方法添加元素数据。并且追加到向量尾部。
+v.push("Go语言微服务核心架构22讲");
+v.push("从0到Go语言微服务架构师");
+println!("{:?}",v);
+println!("len :{}",v.len()); // 通过len方法获取向量中的元素个数。
+
+
+let mut v2 = vec!["Go语言极简一本通","Go语言微服务核心架构22讲","从0到Go语言微服务架构师"];
+// 通过vect!宏创建向量时，向量的数据类型由第一个元素自动推断出来。
+println!("{:?}",v2);
+
+let x=v2.remove(0);
+// remove()方法移除并返回向量中指定的下标索引处的元素，将其后面的所有元素移到向左移动一位。
+println!("{}",x); //输出 Go语言极简一本通
+println!("{:?}",v2);//输出 ["Go语言微服务核心架构22讲", "从0到Go语言微服务架构师"]
+
+//contains() 用于判断向量是否包含某个值。如果值在向量中存在则返回 true，否则返回 false。
+if v.contains(&"从0到Go语言微服务架构师"){
+   println!("找到了")
+}
+
+//访问向量中的某个元素,使用索引
+let y = v[0];
+println!("{}",y); //输出 Go语言极简一本通
+
+//遍历向量
+for item in v {
+   println!("充电项目: {}", item);
+}
+//输出
+充电项目: Go语言极简一本通
+充电项目: Go语言微服务核心架构22讲
+充电项目: 从0到Go语言微服务架构师
+```
+
+**哈希表 HashMap**
+
+HashMap 就是**键值对**集合。键是不能重复的，值是可以重复的。
+
+使用 `HashMap` 结构体之前需要显式导入 `std::collections` 模块。
+
+**创建 HashMap**
+
+使用 new()方法来创建。
+
+```rust
+let mut 变量名称 = HashMap::new();
+```
+
+这个哈希表只有当我们添加了元素之后才能正常使用。因为现在还没指定的数据类型。
+
+| 方法         | 说明                                                         |
+| ------------ | ------------------------------------------------------------ |
+| insert()     | 插入/更新一个键值对到哈希表中，如果数据已经存在则返回旧值，如果不存在则返回 None |
+| len()        | 返回哈希表中键值对的个数                                     |
+| get()        | 根据键从哈希表中获取相应的值                                 |
+| iter()       | 返回哈希表键值对的无序迭代器，迭代器元素类型为 (&’a K, &’a V) |
+| contains_key | 如果哈希表中存在指定的键则返回 true 否则返回 false           |
+| remove()     | 从哈希表中删除并返回指定的键值对                             |
+
+```rust
+use std::collections::HashMap;
+
+let mut process = HashMap::new();
+process.insert("Go语言极简一本通", 1);
+process.insert("Go语言微服务核心架构22讲", 2);
+process.insert("从0到Go语言微服务架构师", 3);
+
+println!("{:?}", process);
+//输出 {"Go语言极简一本通": 1, "Go语言微服务核心架构22讲": 2, "从0到Go语言微服务架构师": 3}
+println!("len {}",menu.len());
+//输出  3
+
+
+// get() 方法用于根据键从哈希表中获取相应的值。
+match process.get(&"从0到Go语言微服务架构师"){
+   Some(v)=>{
+      println!("HashMap v:{}", v);
+   }
+   None=>{
+      println!("找不到");
+  }
+}
+//输出 HashMap v:3
+
+//迭代哈希表 iter()
+for (k, v) in process.iter() {
+   println!("k: {} v: {}", k, v);
+}
+//输出
+k: Go语言微服务核心架构22讲 v: 2
+k: 从0到Go语言微服务架构师 v: 3
+k: Go语言极简一本通 v: 1
+
+// contains_key() 方法用于判断哈希表中是否包含指定的 键值对。如果包含指定的键，那么会返回相应的值的引用，否则返回 None。
+if process.contains_key(&"Go语言极简一本通") {
+   println!("找到了");
+}
+//输出 找到了
+
+// remove() 用于从哈希表中删除指定的键值对。如果键值对存在则返回删除的键值对，返回的数据格式为 (&'a K, &'a V)。如果键值对不存在则返回 None
+
+let x=process.remove(&"Go语言极简一本通");
+println!("{:?}",x);
+println!("{:?}",process);
+//输出
+Some(1)
+{"Go语言微服务核心架构22讲": 2, "从0到Go语言微服务架构师": 3}
+```
+
+**哈希集合 HashSet**
+
+Hashset 是相同数据类型的集合，它是没有重复值的。如果集合中已经存在相同的值，则会插入失败。
+
+**创建 Hashset**
+
+```rust
+let mut 变量名称 = HashSet::new();
+```
+
+常用方法如下
+
+| 方法         | 描述                                                         |
+| ------------ | ------------------------------------------------------------ |
+| insert()     | 插入一个值到集合中 如果集合已经存在值则插入失败              |
+| len()        | 返回集合中的元素个数                                         |
+| get()        | 根据指定的值获取集合中相应值的一个引用                       |
+| iter()       | 返回集合中所有元素组成的无序迭代器 迭代器元素的类型为 `&'a T` |
+| contains_key | 判断集合是否包含指定的值                                     |
+| remove()     | 从结合中删除指定的值                                         |
+
+insert() 用于插入一个值到集合中。
+
+```rust
+let mut studySet = HashSet::new();
+studySet.insert("Go语言极简一本通");
+studySet.insert("Go语言微服务核心架构22讲");
+studySet.insert("从0到Go语言微服务架构师");
+println!("{:?}", studySet);
+//输出 {"从0到Go语言微服务架构师", "Go语言微服务核心架构22讲", "Go语言极简一本通"}
+
+studySet.insert("从0到Go语言微服务架构师");
+println!("{:?}", studySet);
+//输出 {"从0到Go语言微服务架构师", "Go语言微服务核心架构22讲", "Go语言极简一本通"}
+```
+
+len() 方法集合中元素的个数。
+
+```rust
+println!("len:{}",studySet.len());//输出 len:3
+```
+
+`iter()` 方法用于返回集合中所有元素组成的无序迭代器。
+
+```rust
+for item in studySet.iter(){
+    println!("hashSet-充电项目: {}", item);
+}
+//输出
+hashSet-充电项目: Go语言极简一本通
+hashSet-充电项目: Go语言微服务核心架构22讲
+hashSet-充电项目: 从0到Go语言微服务架构师
+```
+
+`get()` 方法用于获取集合中指定值的一个引用。
+
+```rust
+match studySet.get("从0到Go语言微服务架构师") {
+    None => {
+        println!("没找到");
+    }
+    Some(data) => {
+        println!("studySet中找到:{}",data);
+    }
+}
+//输出 studySet中找到:从0到Go语言微服务架构师
+```
+
+`contains()` 方法用于判断集合是否包含指定的值。
+
+```rust
+if studySet.contains("Go语言微服务核心架构22讲"){
+    println!("包含 Go语言微服务核心架构22讲")
+}
+//输出 包含 Go语言微服务核心架构22讲
+```
+
+`remove()` 方法用于从集合中删除指定的值。如果该值在集合中，则返回 `true`，如果不存在则返回 `false`。
+
+```rust
+studySet.remove("Go语言极简一本通");
+println!("{:?}",studySet);//输出 {"Go语言微服务核心架构22讲", "从0到Go语言微服务架构师"}
+
+studySet.remove("golang");
+println!("{:?}",studySet);//输出 {"Go语言微服务核心架构22讲", "从0到Go语言微服务架构师"}
+```
+
+
+
+
 
 
 
