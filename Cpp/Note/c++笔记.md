@@ -176,7 +176,7 @@
 
 **小端**：高字节存放在高地址，低字节存放在低地址（记忆方法，高高低低），一般叫 主机字节顺序。
 
-例如，十六进制数 `12345678`，转换后为 `78563412`
+例如，十六进制数 `12 34 56 78`，转换后为 `78 56 34 12`
 
 对于 1 个字节的数据不需要考虑大小端，超过 1 个字节的数据才需要考虑。
 
@@ -318,7 +318,7 @@ int main()
 
 ```
 
-命名空间中内容的向前生命
+命名空间中内容的向前声明
 
 ```cpp
 //add.h
@@ -2397,6 +2397,43 @@ int main()
 }
 ```
 
+### 回调函数
+
+```cpp
+#include <functional>
+#include <iostream>
+#include <string_view>
+#include <string>
+
+//定义要被回调的函数
+void m_func(std::string_view  content)
+{
+    std::cout << content << " and run by functional." << std::endl;
+}
+
+//调用回调函数的函数
+void doSomething(std::function<void(std::string_view)> callback)
+{
+    std::string cont = "here is doSomething";
+
+    callback(cont);
+}
+
+//主程序示例
+int main()
+{
+    doSomething(&m_func);
+
+    //lambda定义匿名函数，作为回调函数
+    doSomething([](std::string_view content){
+        std::cout << content << " and run by lambda." << std::endl;
+        
+    });
+}
+```
+
+
+
 ### 运算符重载
 
 ```cpp
@@ -3942,9 +3979,22 @@ cmake --install . --config Release --prefix 你想要安装的路径
 
 ![image-20260506175754757](c++笔记.assets/image-20260506175754757.png)
 
+
+
+### 子窗口修改无效
+
+现象：切换子窗口设置后，不起作用
+解决：修改图中“其他选项”，或将此内容删除
+
+![image-20260603105011459](c++笔记.assets/image-20260603105011459.png)
+
+
+
 # 项目
 
-## dat测试数据生成
+## 原生处理
+
+### dat测试数据生成
 
 用到的技术
 
@@ -3964,7 +4014,6 @@ cmake --install . --config Release --prefix 你想要安装的路径
 #include <chrono>
 #include <iomanip>
 #include <string>
-
 
 unsigned char header[7] = {0x5A, 0x54, 0x00, 0x00, 0x90, 0x05, 0x12};
 char tail[2] = {0x45, 0x4E};
@@ -4054,5 +4103,172 @@ int main()
 
     std::cout << "当前时间（毫秒）: " << CurrentTime::getCurrentTimeWithMicroseconds() << std::endl;
 }
+```
+
+
+
+## 第三方库使用示例
+
+### GMP高精度库使用
+
+```cpp
+//GMP简介
+//GMP 高精度计算库，计算精度与电脑内存相关
+
+//demo.cpp
+#include "x86/include/gmp.h"
+
+/*
+#ifdef _WIN64
+#define GMP_PATH "x64/lib"
+#else
+#define GMP_PATH "x86/lib"
+#endif
+
+#define STATIC_LIB
+
+#ifdef STATIC_LIB
+#pragma comment(lib, GMP_PATH "/libgmp.a")
+#pragma comment(lib, GMP_PATH "/libgcc.a")
+#pragma comment(lib, GMP_PATH "/libmingwex.a")
+#else
+#pragma comment(lib, GMP_PATH "/libgmp.dll.a")
+#endif
+*/
+
+using namespace std;
+
+int main()
+{
+	//设置精度 256位 约为77位十进制精度
+	mpf_set_default_prec(256);
+	{
+		//声明
+		mpf_t a;
+		mpf_t b;
+		mpf_t c;
+
+		//初始化，使用当前精度
+		mpf_init(a);
+		mpf_init(b);
+		mpf_init(c);
+
+		// 参数： 变量，数值，进制
+		mpf_set_str(a,"2",10);
+		mpf_set_str(c,"0.1",10);
+
+
+		mpf_pow_ui(b,a,64);
+
+		//
+		mpf_mul(a,b,c);
+
+		// std::cout << "结果: ";
+		// mpf_out_str(stdout, 10, 30, a);
+		// std::cout << std::endl << std::endl;
+
+		gmp_printf("结果: %.30Ff\n", a);
+	}
+	return 0;
+}
+
+//CMakeLists.txt
+#########################################
+## 高精度计算
+#########################################
+
+
+cmake_minimum_required(VERSION 3.10)
+project(GMP_HighPrecision)
+
+# 设置C++标准
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 设置使用静态运行时库（可选，根据你的项目需求）
+# 如果需要动态运行时库，可以注释掉下面这行
+# set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+# 根据平台设置GMP路径
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    # 64位平台
+    set(GMP_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/x64)
+    message(STATUS "Configuring for x64 platform")
+else()
+    # 32位平台
+    set(GMP_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/x86)
+    message(STATUS "Configuring for x86 platform")
+endif()
+
+# 设置GMP的包含目录和库目录
+set(GMP_INCLUDE_DIR ${GMP_BASE_DIR}/include)
+set(GMP_LIB_DIR ${GMP_BASE_DIR}/lib)
+
+# 查找GMP库文件
+find_library(GMP_LIBRARY
+    NAMES libgmp.a gmp libgmp gmpxx
+    PATHS ${GMP_LIB_DIR}
+    NO_DEFAULT_PATH
+    REQUIRED
+)
+
+# 根据你的代码中使用的静态库，也查找其他依赖库
+find_library(GCC_LIBRARY
+    NAMES libgcc.a gcc
+    PATHS ${GMP_LIB_DIR}
+    NO_DEFAULT_PATH
+)
+
+find_library(MINGWEX_LIBRARY
+    NAMES libmingwex.a mingwex
+    PATHS ${GMP_LIB_DIR}
+    NO_DEFAULT_PATH
+)
+
+# 添加可执行文件
+add_executable(${PROJECT_NAME} demo.cpp)
+
+# 包含目录
+target_include_directories(${PROJECT_NAME} PRIVATE ${GMP_INCLUDE_DIR})
+
+# 链接库
+target_link_libraries(${PROJECT_NAME}
+    ${GMP_LIBRARY}
+    ${GCC_LIBRARY}
+    ${MINGWEX_LIBRARY}
+)
+
+# 如果找不到gcc和mingwex库，只链接gmp库也可以
+# target_link_libraries(${PROJECT_NAME} ${GMP_LIBRARY})
+
+# 设置平台特定的编译选项
+if(MSVC)
+    # VS2015对应的是19.0版本
+    if(MSVC_VERSION EQUAL 1900)
+        message(STATUS "Using Visual Studio 2015")
+    endif()
+    
+    # 添加必要的编译选项
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        /W3           # 警告级别3
+        /EHsc         # 启用C++异常处理
+    )
+    
+    # Debug/Release配置
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/Debug
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release
+    )
+
+    target_link_options(${PROJECT_NAME} PRIVATE 
+        /SAFESEH:NO
+        /IGNORE:4221  # 忽略LNK4221警告
+    )
+endif()
+
+# 打印配置信息
+message(STATUS "GMP Include Dir: ${GMP_INCLUDE_DIR}")
+message(STATUS "GMP Library Dir: ${GMP_LIB_DIR}")
+message(STATUS "GMP Library: ${GMP_LIBRARY}")
 ```
 

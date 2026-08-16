@@ -22,7 +22,7 @@
 
 ### 新建的项目编译没有对应的QT版本和找不到ui文件
 
-将下方的Version设置位对应版本
+将下方的Version设置为对应版本
 
 ![image-20251222192028678](QTLearn.assets/image-20251222192028678.png)
 
@@ -35,6 +35,8 @@
 ![image-20251223192835393](QTLearn.assets/image-20251223192835393.png)
 
 ### exe不能运行，但也没报错，检查是否缺库
+
+### 或者0x00007b错误
 
 使用系统中vs2015开发人员命令提示
 
@@ -50,6 +52,11 @@ dumpbin /dependents  路径/程序.exe   或者 dll文件
 ### 界面显示
 
 #### 不同分辨率显示一致性
+
+可以保证客户运行环境下与开发环境下的界面一致性。
+
+Qt5.11可用，不过有的时候可能会出现莫名其妙的问题
+Qt6好像自带并且默认开启
 
 ```cpp
 #include "datatransmittermonitor.h"
@@ -90,6 +97,7 @@ void enableHighReslution(){
   //使用高分辨率
   pixelMap	QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 }
+
 int main(int argc, char *argv[]){	
   //开启高分辨率支持	
   enableHighReslution();
@@ -139,6 +147,10 @@ QString hexString; for (int i = 0; i < data.size(); i++)
 
 ### 数据类型
 
+#### QStringLiteral
+
+QStringLiteral用于编译时以确定的显示内容即用于显示固定内容，可以提高程序性能。
+
 #### QByteArray和QString相互转换
 
 ```cpp
@@ -148,8 +160,8 @@ QByteArray =  QString . toUTF8().toHex()QString = QString::fromUtf8(QByteArray)
 #### QByteArray中的元素与0xFF类的数据比较
 
 0xFF在有符号char中为-1，其他最高位为1的数据类似，也是负数。
-
 因为QByteArray::at(int index)返回的char有符号，在与无符号数据比较时会出错。
+其他情况下作比较时也会出现这种情况，需要注意。
 
 ```c++
 //最佳实践
@@ -159,10 +171,11 @@ if(static_cast<unsigned char>(byteArray.at(index)) == 0xFF)
 }
 ```
 
-#### int转16进制
+#### int转16进制字符串
 
 ```cpp
-int value = 12;QString str = QString::number(value,16);//此时str = c
+int value = 12;
+QString str = QString::number(value,16);//此时str = c
 ```
 
 #### QByteArray判断
@@ -195,7 +208,51 @@ if (unsigned char(m_byt.at(4)) == 0x80)
 ##### 为内容添加双击事件
 
 ```cpp
-#include <QListWidget>#include <QApplication>#include <QMessageBox>// 创建QListWidgetQListWidget *listWidget = new QListWidget;// 添加一些项目listWidget->addItem("Item 1");listWidget->addItem("Item 2");listWidget->addItem("Item 3");// 连接双击信号到槽函数QObject::connect(listWidget, &QListWidget::itemDoubleClicked, [](QListWidgetItem *item) {    QMessageBox::information(nullptr, "双击事件",                            "你双击了: " + item->text());});//实际应用-音乐播放器项目歌曲列表void MainWindow::loadMusicDir(const QString &filePath){    QDir dir(filePath);    if (dir.exists() == false)    {        QMessageBox::warning(this,"文件夹","文件夹不存在");        return ;    }    QFileInfoList musicList = dir.entryInfoList(QDir::Files);    for(QFileInfo music : musicList)    {        //判断后缀        if(music.suffix() == "flac" || music.suffix() == "mp3" )        {            ui->listWidget_music->addItem(music.baseName());        }    }    connect(ui->listWidget_music,&QListWidget::itemDoubleClicked,this,[=](QListWidgetItem * item)    {        for(QFileInfo music : musicList)        {            if(music.baseName() == item->text())            {                mediaPlayer->setMedia(QUrl::fromLocalFile(music.filePath()));                mediaPlayer->play();                setButtonStyle(ui->pushButton_play,":/res/Resources/Icon/play.png");                isPlay = true;                return ;            }        }    });}
+#include <QListWidget>
+#include <QApplication>
+#include <QMessageBox>
+// 创建QListWidget
+QListWidget *listWidget = new QListWidget;
+// 添加一些项目
+listWidget->addItem("Item 1");
+listWidget->addItem("Item 2");
+listWidget->addItem("Item 3");
+// 连接双击信号到槽函数
+QObject::connect(listWidget, &QListWidget::itemDoubleClicked, [](QListWidgetItem *item) {    
+    QMessageBox::information(nullptr, "双击事件",                            "你双击了: " + item->text());});
+//实际应用-音乐播放器项目歌曲列表
+void MainWindow::loadMusicDir(const QString &filePath){   
+    QDir dir(filePath);
+    if (dir.exists() == false)
+    {    
+        QMessageBox::warning(this,"文件夹","文件夹不存在");
+        return ;
+    }
+    QFileInfoList musicList = dir.entryInfoList(QDir::Files);
+    for(QFileInfo music : musicList)
+    {       
+        //判断后缀   
+        if(music.suffix() == "flac" || music.suffix() == "mp3" ) 
+        {       
+            ui->listWidget_music->addItem(music.baseName());   
+        }  
+    }  
+    connect(ui->listWidget_music,&QListWidget::itemDoubleClicked,this,
+            [=](QListWidgetItem * item)   
+            {    
+                for(QFileInfo music : musicList)       
+                {         
+                    if(music.baseName() == item->text())  
+                    {          
+                        mediaPlayer->setMedia(QUrl::fromLocalFile(music.filePath()));
+                        mediaPlayer->play();        
+                        setButtonStyle(ui->pushButton_play,":/res/Resources/Icon/play.png");          
+                        isPlay = true;         
+                        return ;       
+                    }       
+                } 
+            });
+}
 ```
 
 #### QMessageBox
@@ -205,13 +262,107 @@ if (unsigned char(m_byt.at(4)) == 0x80)
 ##### 通用的消息框
 
 ```cpp
-//1. informationStandardButton QMessageBox::information(QWidget *parent,                                        const QString &title,                                        const QString &text,                                        StandardButtons buttons = Ok,                                        StandardButton defaultButton = NoButton);/*  defaultButton：指定 Enter 回车键对应的按钮，用户按下回车键时就等同于按下此按钮。注意，defaultButton 参数的值必须是 buttons 中包含的按钮，当然也可以不手动指定，QMessageBox 会自动从 buttons 中选择合适的按钮作为 defaultButton 的值。*///2. critical 消息对话框常用于给用户提示“操作错误”或“运行失败”的信息StandardButton QMessageBox::critical(QWidget *parent,                                     const QString &title,                                     const QString &text,                                     StandardButtons buttons = Ok,                                     StandardButton defaultButton = NoButton);//3.  question消息对话框StandardButton QMessageBox::question(QWidget *parent,                                     const QString &title,                                     const QString &text,                                     StandardButtons buttons = StandardButtons( Yes | No ),                                     StandardButton defaultButton = NoButton);//4. warning消息对话框StandardButton QMessageBox::warning(QWidget *parent,                                    const QString &title,                                    const QString &text,                                    StandardButtons buttons = Ok,                                    StandardButton defaultButton = NoButton);//5. about和aboutQt对话框void QMessageBox::about(QWidget *parent, const QString &title, const QString &text);void QMessageBox::aboutQt(QWidget *parent, const QString &title = QString());
+//1. information
+StandardButton QMessageBox::information(QWidget *parent,  
+                         const QString &title,           
+                         const QString &text,   
+                         StandardButtons buttons = Ok,   
+                         StandardButton defaultButton = NoButton);
+/*  defaultButton：指定 Enter 回车键对应的按钮，用户按下回车键时就等同于按下此按钮。注意，defaultButton 参数的值必须是 buttons 中包含的按钮，当然也可以不手动指定，QMessageBox 会自动从 buttons 中选择合适的按钮作为 defaultButton 的值。*/
+
+//2. critical 消息对话框常用于给用户提示“操作错误”或“运行失败”的信息
+StandardButton QMessageBox::critical(QWidget *parent,  
+                      const QString &title,
+                      const QString &text,  
+                      StandardButtons buttons = Ok, 
+                      StandardButton defaultButton = NoButton);
+//3.  question消息对话框
+StandardButton QMessageBox::question(QWidget *parent,
+                                     const QString &title,
+                                     const QString &text, 
+                                     StandardButtons buttons = StandardButtons( Yes | No ), 
+                                     StandardButton defaultButton = NoButton);
+
+//4. warning消息对话框
+StandardButton QMessageBox::warning(QWidget *parent,
+                                    const QString &title,
+                                    const QString &text,
+                                    StandardButtons buttons = Ok,  
+                                    StandardButton defaultButton = NoButton);
+
+//5. about和aboutQt对话框
+void QMessageBox::about(QWidget *parent, const QString &title, const QString &text);
+void QMessageBox::aboutQt(QWidget *parent, const QString &title = QString());
 ```
 
 ##### 自定义按钮
 
 ```cpp
-#include <QApplication>#include <QMessageBox>#include <QPushButton>#include <QDebug>int main(int argc, char *argv[]){    QApplication a(argc, argv);    QMessageBox MBox;    MBox.setWindowTitle("QMessageBox自定义对话框");    MBox.setText("这是一个自定义的对话框");    MBox.setIconPixmap(QPixmap("C:UsersxiexuewuDesktopicon_c.png"));    QPushButton *agreeBut = MBox.addButton("同意", QMessageBox::AcceptRole);    MBox.exec();    if (MBox.clickedButton() == (QAbstractButton*)agreeBut) {        //在 Qt Creator 的输出窗口中输出指定字符串        qDebug() << "用户点击了同意按钮";    }    return a.exec();}//main.cpp#include <QApplication>#include <QWidget>#include <QMessageBox>#include <QPushButton>#include <QAbstractButton>QPushButton* agreeBut;QPushButton* disagreeBut;class MyWidget:public QWidget{    Q_OBJECTpublic slots:    void buttonClicked(QAbstractButton * butClicked);};void MyWidget::buttonClicked(QAbstractButton * butClicked){    if(butClicked == (QAbstractButton*)disagreeBut){        this->close();    }}///窗口弹出时，阻止点击主窗口int main(int argc, char *argv[]){    QApplication a(argc, argv);    //创建主窗口    MyWidget myWidget;    myWidget.setWindowTitle("主窗口");    myWidget.resize(400,300);    //创建消息框    QMessageBox MyBox(QMessageBox::Question,"","");    MyBox.setParent(&myWidget);    //设置消息框的属性为对话框，它会是一个独立的窗口    MyBox.setWindowFlags(Qt::Dialog);    MyBox.setWindowTitle("协议");    MyBox.setText("使用本产品，请您严格遵守xxx规定！");    //自定义两个按钮    agreeBut = MyBox.addButton("同意", QMessageBox::AcceptRole);    disagreeBut = MyBox.addButton("拒绝", QMessageBox::RejectRole);    myWidget.show();    //添加信号和槽，监听用户点击的按钮，如果用户拒绝，则主窗口随之关闭。    QObject::connect(&MyBox,&QMessageBox::buttonClicked,&myWidget,&MyWidget::buttonClicked);    MyBox.exec();    return a.exec();}//MyWidget类的定义应该放到 .h 文件中，本例中将其写到 main.cpp 中，程序最后需要添加 #include "当前源文件名.moc" 语句，否则无法通过编译。#include "main.moc"
+#include <QApplication>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QDebug>
+int main(int argc, char *argv[]){ 
+    QApplication a(argc, argv);
+    QMessageBox MBox;
+    MBox.setWindowTitle("QMessageBox自定义对话框");
+    MBox.setText("这是一个自定义的对话框");
+    MBox.setIconPixmap(QPixmap("C:UsersxiexuewuDesktopicon_c.png"));
+    QPushButton *agreeBut = MBox.addButton("同意", QMessageBox::AcceptRole);
+    MBox.exec();
+    if (MBox.clickedButton() == (QAbstractButton*)agreeBut)
+    {    
+        //在 Qt Creator 的输出窗口中输出指定字符串
+        qDebug() << "用户点击了同意按钮";    }
+    return a.exec();
+}
+
+//main.cpp
+#include <QApplication>
+#include <QWidget>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QAbstractButton>
+QPushButton* agreeBut;
+QPushButton* disagreeBut;
+class MyWidget:public QWidget{   
+    Q_OBJECT
+public slots: 
+    void buttonClicked(QAbstractButton * butClicked);
+};
+
+void MyWidget::buttonClicked(QAbstractButton * butClicked){ 
+    if(butClicked == (QAbstractButton*)disagreeBut)
+    {        
+        this->close();   
+    }
+}
+
+///窗口弹出时，阻止点击主窗口
+int main(int argc, char *argv[]){   
+    QApplication a(argc, argv);   
+    //创建主窗口
+    MyWidget myWidget; 
+    myWidget.setWindowTitle("主窗口");
+    myWidget.resize(400,300); 
+    //创建消息框
+    QMessageBox MyBox(QMessageBox::Question,"",""); 
+    MyBox.setParent(&myWidget);
+    //设置消息框的属性为对话框，它会是一个独立的窗口
+    MyBox.setWindowFlags(Qt::Dialog);
+    MyBox.setWindowTitle("协议"); 
+    MyBox.setText("使用本产品，请您严格遵守xxx规定！");
+    //自定义两个按钮 
+    agreeBut = MyBox.addButton("同意", QMessageBox::AcceptRole); 
+    disagreeBut = MyBox.addButton("拒绝", QMessageBox::RejectRole);
+    myWidget.show();
+    //添加信号和槽，监听用户点击的按钮，如果用户拒绝，则主窗口随之关闭。
+
+    QObject::connect(&MyBox,&QMessageBox::buttonClicked,&myWidget,&MyWidget::buttonClicked);  
+    MyBox.exec();  
+    return a.exec();
+}
+//MyWidget类的定义应该放到 .h 文件中，本例中将其写到 main.cpp 中，程序最后需要添加 #include "当前源文件名.moc" 语句，否则无法通过编译。#include "main.moc"
 ```
 
 #### QButtonGroup
@@ -239,13 +390,78 @@ connect(
 1.无参数传递
 
 ```cpp
-//test.hclass Test: public QObject{    Q_OBJECTpublic:    Test();   //构造函数    ~Test();  //析构函数        public slots:    void doSomething();signals:    void sentSignal();  //只需要定义};//qt的默认主函数#include "Test.h"#include <iostream>MainWindow::MainWindow(QWidget *parent)    : QMainWindow(parent)    , ui(new Ui::MainWindow){    ui->setupUi(this);        Test test = new Test(this);    //第一个参数为发送方，第二个参数为信号，第三个参数为处理方，第四个参数为处理方法    connect(test,&Test::sendSignal,test,&Test::doSomething);    //Lambda 表达式处理信号    connect(test,&Test::sendSignal,[](){        std::cout << "I Can Do It!";    });            emit test.sendSignal;  //触发信号}
+//test.h
+class Test: public QObject{   
+    Q_OBJECTpublic: 
+    Test();   //构造函数 
+    ~Test();  //析构函数   
+    
+    public slots:  
+    void doSomething();
+    
+    signals:
+    void sentSignal(); 
+    //只需要定义
+};
+
+//qt的默认主函数
+#include "Test.h"
+#include <iostream>
+MainWindow::MainWindow(QWidget *parent)    : 
+QMainWindow(parent)    , 
+ui(new Ui::MainWindow)
+{    
+    ui->setupUi(this);
+    Test test = new Test(this);    
+    //第一个参数为发送方，第二个参数为信号，第三个参数为处理方，第四个参数为处理方法   
+    connect(test,&Test::sendSignal,test,&Test::doSomething);    
+    //Lambda 表达式处理信号
+    connect(test,&Test::sendSignal,[](){       
+        std::cout << "I Can Do It!";    
+    });          
+    emit test.sendSignal;  //触发信号
+}
 ```
 
 2.有参数传递
 
 ```cpp
-//默认主函数结构#include <QMainWindow>namespace Ui {class MainWindow;}class MainWidow : public QMainWindow{    Q_OBJECT        public :    explicit MainWindow(QWidget *parent = nullptr);    ~MainWindow();    public slots:    void doPrint(QString str);    signals:    void sentStr(QString str); };#include <iostream>#include "MainWindow"MainWindow::MainWindow(QWidget *parent)    : QMainWindow(parent)    , ui(new Ui::MainWindow){    ui->setupUi(this);        // this指代本实例，即主窗口类    //信号和槽函数都不需要带括号    connect(this,&MainWindow::sentStr,this,&MainWindow::doPrint);            //在触发信号时带上所需参数    emit sentStr("Well Done");}void doPrint(QString str){    std::cout << str <<std::endl;}
+//默认主函数结构
+#include <QMainWindow>
+namespace Ui {
+    class MainWindow;
+}
+class MainWidow : public QMainWindow{  
+    Q_OBJECT    
+        public : 
+    explicit MainWindow(QWidget *parent = nullptr); 
+    ~MainWindow(); 
+    
+    public slots:   
+    void doPrint(QString str);  
+    signals:   
+    void sentStr(QString str); 
+};
+
+#include <iostream>
+#include "MainWindow"
+MainWindow::MainWindow(QWidget *parent)    : 
+QMainWindow(parent)    , 
+ui(new Ui::MainWindow)
+{   
+    ui->setupUi(this);        
+    // this指代本实例，即主窗口类    
+    
+    //信号和槽函数都不需要带括号 
+    connect(this,&MainWindow::sentStr,this,&MainWindow::doPrint); 
+    
+    //在触发信号时带上所需参数  
+    emit sentStr("Well Done");
+}
+
+void doPrint(QString str){    
+    std::cout << str <<std::endl;
+}
 ```
 
 #### 第五个参数
@@ -260,7 +476,14 @@ connect(
 #### 断开信号和槽函数的连接
 
 ```cpp
-//断开一个信号和一个槽的连接disconnect(sender,&Sender::Signal,processor,&Processor::slot);//断开一个信号的所有连接者disconnect(sender,&Sender::signal,nullptr,nullptr);//断开信号发送者的所有信号和槽disconnect(serder,nullptr,nullptr,nullptr);
+//断开一个信号和一个槽的连接
+disconnect(sender,&Sender::Signal,processor,&Processor::slot);
+
+//断开一个信号的所有连接者
+disconnect(sender,&Sender::signal,nullptr,nullptr);
+
+//断开信号发送者的所有信号和槽
+disconnect(serder,nullptr,nullptr,nullptr);
 ```
 
 #### 补充
@@ -399,7 +622,9 @@ class ThreadSafeCounter : public QObject{
 #### 关闭线程
 
 ```cpp
-m_thread.requestInterruption(); //请求停止m_thread.wait(); //等待m_thread.terminal(); //强制停止
+m_thread.requestInterruption(); //请求停止m_thread.wait(); 
+//等待
+m_thread.terminal(); //强制停止
 ```
 
 ### QSettings读写ini文件
@@ -911,7 +1136,7 @@ void MainWindow::paintEvent(QPaintEvent *event){    //径向渐变    QPainter p
 
 ### 推荐的项目结构
 
-```ps1
+```powershell
 qt6_cmake_t2/
 ├── CMakeLists.txt                 # 根CMakeLists
 ├── cmake/                         # CMake模块文件夹

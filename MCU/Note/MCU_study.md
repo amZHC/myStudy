@@ -188,7 +188,38 @@ STM32F103C8T6
 ### 5461BS数码管
 
 ```c
-#include "stm32f10x.h"#include "OLED.h"#include "Delay.h"// 共阳数码管编码表uint16_t smgduan[17] = {	0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8,	0x80, 0x90, 0x88, 0x83, 0xc6, 0xa1, 0x86, 0x8e};void Nixie_Init(){	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);	GPIO_InitTypeDef GPIO_InitStructure;	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11;	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;	GPIO_Init(GPIOA, &GPIO_InitStructure);	GPIO_SetBits(GPIOA, GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11);}void Nixie_Display(uint8_t Location, uint8_t Number){	GPIO_Write(GPIOA, smgduan[Number]);	GPIO_SetBits(GPIOA, 0x0800 >> (Location - 1));	Delay_ms(5);	GPIO_Write(GPIOA, 0x0000);}int main(){	Nixie_Init();	while (1)	{		Nixie_Display(1, 1);		Nixie_Display(2, 2);		Nixie_Display(3, 1);		Nixie_Display(4, 2);	}}
+#include "stm32f10x.h"
+#include "OLED.h"
+#include "Delay.h"
+// 共阳数码管编码表
+uint16_t smgduan[17] = {	0xc0, 0xf9, 0xa4, 0xb0, 0x99, 0x92, 0x82, 0xf8,	0x80, 0x90, 0x88, 0x83, 0xc6, 0xa1, 0x86, 0x8e};
+void Nixie_Init(){	
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);	
+    GPIO_InitTypeDef GPIO_InitStructure;	
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;	
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;	
+    GPIO_Init(GPIOA, &GPIO_InitStructure);	
+    GPIO_SetBits(GPIOA, GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11);
+}
+
+void Nixie_Display(uint8_t Location, uint8_t Number){
+    GPIO_Write(GPIOA, smgduan[Number]);
+    GPIO_SetBits(GPIOA, 0x0800 >> (Location - 1));
+    Delay_ms(5);
+    GPIO_Write(GPIOA, 0x0000);
+}
+
+int main(){	
+    Nixie_Init();
+    while (1)	
+    {		
+        Nixie_Display(1, 1);
+        Nixie_Display(2, 2);
+        Nixie_Display(3, 1);
+        Nixie_Display(4, 2);
+    }
+}
 ```
 
 #### 1088AS+MAX7219
