@@ -668,11 +668,26 @@ int add(int a, int b);  //前向声明
 
 ## 基本数据类型
 
+#### 使用uint32_t等这种关键字
+
+```cpp
+// 引入头文件
+#include <cstdint>
+
+uint16_t m_u16 = 0;
+```
+
+
+
+#### 关键概念
+
 比特/位 （bit） ：储存0/1
 
 字节（byte）：8个比特
 
 没个存储器地址保存1个字节的数据
+
+
 
 ### C++中的基本数据类型
 
@@ -685,15 +700,21 @@ int add(int a, int b);  //前向声明
 |std::nullptr_t (C++11) |Null Pointer |空指针 |nullptr |
 |void |Void |无类型 |n/a |
 
+
+
 ### 后缀（_t）
 
 在较新版本的C++中定义的许多类型（例如，std::nullptr_t）使用_t后缀。这个后缀的意思是“类型(type)”，它是应用于现代类型的一个常见术语。
 
 如果您看到带_t后缀的东西，它可能是一种类型。但许多类型没有_t后缀，这是不同版本引入的不一致导致的。
 
+
+
 ### Void
 
 void表示没有类型，一般只用于定义不返回值的函数，不可用于定义变量。
+
+
 
 ### 对象大小和sizeof运算符
 
@@ -727,6 +748,8 @@ C++标准没有定义任何基本数据类型的确切大小，它只为整型�
 |   |long double |8 |8或12或16 |
 |指针 |std::nullptr_t |4 |4或8 |
 
+
+
 #### sizeof运算符
 
 sizeof是一元运算符，接受类型或变量，返回其大小，以字节为单位。
@@ -753,6 +776,8 @@ int main()
     return 0;
 }
 ```
+
+
 
 #### 有符号整数
 
@@ -3288,6 +3313,243 @@ int main()
 
 ![image-20260307174300388](c++笔记.assets/image-20260307174300388-17728765851421.png)
 
+
+
+## 多线程
+
+创建线程
+
+```cpp
+///  1. 初级使用
+
+#include <iostream>
+#include <thread>
+
+// 要被放入线程的函数
+void myFunc(int value)
+{
+    std::cout << "Here is child thread  value: " << value << std::endl;
+}
+
+int main()
+{
+    // 创建一个线程，放入myFunc函数，10为传给函数的参数
+    std::thread th1(myFunc, 10);
+    // join会运行子线程并阻塞当前线程直到子线程运行结束
+    th1.join();
+    
+    std::cout << "here is main" << std::endl;
+    return 0;
+}
+
+
+
+//  2. 传入引用的值
+#include <iostream>
+#include <thread>
+
+void myFunc(int& value)
+{
+    std::cout << "Here is child thread  value: " << value << std::endl;
+}
+
+int main()
+{
+    int var = 10;
+
+    std::thread th1(myFunc, std::ref(var));
+    th1.join();
+    
+    std::cout << "here is main" << std::endl;
+    return 0;
+}
+
+
+// 3. 分离线程
+#include <iostream>
+#include <thread>
+#include <chrono>
+
+void myFunc(int& value)
+{
+    std::cout << "Here is child thread  value: " << value << std::endl;
+}
+
+int main()
+{
+    int var = 10;
+
+    std::thread th1(myFunc, std::ref(var));
+    
+    // 将子线程与当前线程分离，子线程单独执行，不再影响当前线程，
+   	//由于当前线程为主线程，所以主线程结束时会结束子线程
+    th1.detach();   
+    
+    std::cout << "here is main" << std::endl;
+    
+    // cpp中的等待
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    
+    return 0;
+}
+```
+
+
+
+> 如果不调用join()也不调用detach()，程序结束时会报错。
+
+
+
+互斥锁mutex
+
+```cpp
+// 1. 不加锁
+#include <iostream>
+#include <thread>
+#include <chrono>
+
+unsigned long counter = 0;
+
+void addCounter(int times)
+{
+    std::cout << std::this_thread::get_id() << "  is my thread ID" << std::endl;             // 操作
+    while (times > 0) {
+        counter++;
+        times--;
+    }
+}
+
+int main()
+{
+    int var = 10;
+
+    std::thread th1(addCounter, 10000);
+    std::thread th2(addCounter, 10000);
+
+    // 
+    th1.join();
+    th2.join();
+    
+    std::cout << std::this_thread::get_id() << "    here is main, counter is   " << counter << std::endl;
+
+    // cpp中的等待
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    return 0;
+}
+
+/*
+上面代码中主函数的最终输出结果可能与预期不一致，因为两个线程互相竞争counter，会造成数据混乱
+*/
+
+
+
+// 2. 加入锁
+#include <iostream>
+#include <thread>
+#include <chrono>
+#include <mutex>    // 引入锁的头文件
+
+
+unsigned long counter = 0;
+// 定义一个锁
+std::mutex counter_mutex;
+
+
+void addCounter(int times)
+{
+    std::cout << std::this_thread::get_id() << "  is my thread ID" << std::endl;
+
+    while (times > 0) {
+
+        counter_mutex.lock();       // 加锁
+        
+        counter++;                  // 操作
+        
+        counter_mutex.unlock();     // 解锁
+
+        times--;
+    }
+}
+
+
+int main()
+{
+    int var = 10;
+
+    std::thread th1(addCounter, 10000);
+    std::thread th2(addCounter, 10000);
+
+    // 
+    th1.join();
+    th2.join();
+    
+    std::cout << std::this_thread::get_id() << "    here is main, counter is   " << counter << std::endl;
+
+    // cpp中的等待
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    return 0;
+}
+
+/*
+此时输出结果为
+23  is my thread ID
+  is my thread ID
+1    here is main, counter is   20000
+
+因为std::cout 不是线程安全，导致第第一个线程输出时，将第二个线程中的id值覆盖
+
+此时counter时安全的，最后结果为20000
+*/
+
+// 要想解决std::cout的线程安全问题,可以服用counter_mutex
+/* 输出结果为
+2  is my thread ID
+3  is my thread ID
+1    here is main, counter is   20000
+*/
+void addCounter(int times)
+{
+    counter_mutex.lock();       // 加锁
+        
+    std::cout << std::this_thread::get_id() << "  is my thread ID" << std::endl;             // 操作
+        
+    counter_mutex.unlock();     // 解锁
+    
+    
+    // 或者定义一个专门用于输出的锁
+    /*
+    std::mutex print_mutex;
+
+	void addCounter(int times) {
+    	{
+        	std::lock_guard<std::mutex> lock(print_mutex);
+        	std::cout << std::this_thread::get_id() << "  is my thread ID" << std::endl;
+        }
+    	// 后续的循环操作...
+	}
+	*/
+
+    while (times > 0) {
+
+        counter_mutex.lock();       // 加锁
+        
+        counter++;                  // 操作
+        
+        counter_mutex.unlock();     // 解锁
+
+        times--;
+    }
+}
+
+
+```
+
+
+
+
+
 ## 补充
 
 ### dll和lib
@@ -3607,6 +3869,66 @@ cmake --build . --config Debug
 # 安装到系统目录（可选，需要管理员权限）
 cmake --install . --config Release --prefix 你想要安装的路径
 ```
+
+
+
+# 多平台开发
+
+
+
+## 平台识别
+
+在代码中识别所处的开发环境
+
+```cpp
+// 操作系统识别
+#if defined(_WIN32) || defined(_WIN64)
+    #define PLATFORM_WINDOWS 1
+#elif defined(__APPLE__) && defined(__MACH__)
+    // 注意：Apple 的模拟器和 iOS 也会走这里，通常需要进一步区分
+    #include <TargetConditionals.h>
+    #if TARGET_OS_MAC && !TARGET_OS_IPHONE
+        #define PLATFORM_MACOS 1
+    #else
+        #define PLATFORM_IOS 1
+    #endif
+#elif defined(__linux__)
+    #define PLATFORM_LINUX 1
+#elif defined(__ANDROID__)
+    #define PLATFORM_ANDROID 1
+#else
+    #error "Unknown platform"
+#endif
+
+
+// 编译器识别
+#if defined(_MSC_VER)
+    #define COMPILER_MSVC 1
+    // _MSC_VER 的值如 1929 表示 VS 2019
+#elif defined(__clang__)
+    #define COMPILER_CLANG 1
+#elif defined(__GNUC__)
+    #define COMPILER_GCC 1
+#endif
+
+
+// 平台识别
+#if defined(__x86_64__) || defined(_M_AMD64)
+    #define ARCH_X86_64 1
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    #define ARCH_ARM64 1
+#elif defined(__arm__) || defined(_M_ARM)
+    #define ARCH_ARM 1
+#elif defined(__i386__) || defined(_M_IX86)
+    #define ARCH_X86 1
+#endif
+```
+
+
+
+
+
+
 
 # 疑难杂症
 

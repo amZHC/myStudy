@@ -24,7 +24,45 @@
 ### 按钮控制LED灯
 
 ```c
-#include <Atmel/REGX52.H>void Delay(unsigned int xms){    unsigned char i, j;    while (xms--) {        i = 2;        j = 239;        do {            while (--j);        } while (--i);    }}/* void main(){    while (1) {  //按下开，再按下关        if (P3_1 == 0) {            Delay(20); // 消除按键抖动            while (P3_1 == 0);            Delay(20);            P2_0 = ~P2_0;        }    }} *//* void main(){    unsigned char LEDNum = 0; // 占八位,正好对应一个八位寄存器    while (1) {        if (P3_1 == 0) { // 实现二进制计数            Delay(20);            while (P3_1 == 0);            Delay(20);            LEDNum++;            P2 = ~LEDNum; // 取反        }    }} */void main(){    unsigned char LedNum = 0;    P2                   = ~(0x01 << LedNum);    while (1) {         if (P3_1 == 0) {            Delay(20);            if (LedNum >= 7) {                LedNum = 0;            } else {                LedNum++;            }            P2 = ~(0x01 << LedNum);            while (P3_1 == 0);            Delay(20);        } else if (P3_0 == 0) {            Delay(20);            if (LedNum <= 0) {                LedNum = 7;            } else {                LedNum--;            }            P2 = ~(0x01 << LedNum);            while (P3_0 == 0);            Delay(20);        }    }}
+#include <Atmel/REGX52.H>
+void Delay(unsigned int xms){    
+    unsigned char i, j;    
+    while (xms--) {        
+        i = 2;        
+        j = 239;        
+        do {            
+            while (--j);        
+        } while (--i);    
+    }
+}
+/* void main(){    while (1) {  //按下开，再按下关        if (P3_1 == 0) {            Delay(20); // 消除按键抖动            while (P3_1 == 0);            Delay(20);            P2_0 = ~P2_0;        }    }} *//* void main(){    unsigned char LEDNum = 0; // 占八位,正好对应一个八位寄存器    while (1) {        if (P3_1 == 0) { // 实现二进制计数            Delay(20);            while (P3_1 == 0);            Delay(20);            LEDNum++;            P2 = ~LEDNum; // 取反        }    }} */
+void main(){    
+    unsigned char LedNum = 0;    
+    P2                   = ~(0x01 << LedNum);    
+    while (1) {         
+        if (P3_1 == 0) {            
+            Delay(20);            
+            if (LedNum >= 7) {                
+                LedNum = 0;            
+            } else {
+                LedNum++;
+            }
+            P2 = ~(0x01 << LedNum);
+            while (P3_1 == 0);
+            Delay(20);
+        } else if (P3_0 == 0) {
+            Delay(20);
+            if (LedNum <= 0) {
+                LedNum = 7;
+            } else {
+                LedNum--;
+            }
+            P2 = ~(0x01 << LedNum);
+            while (P3_0 == 0);
+            Delay(20); 
+        } 
+    }
+}
 ```
 
 ### 数码管控制
