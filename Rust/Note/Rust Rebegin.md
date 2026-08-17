@@ -95,21 +95,21 @@ fn main(){
 2. 浮点 Floating Point
    
     a. f32:4字节
-   
+
     b. f64(默认):8字节
-   
+
     c. 都有符号(signed)
 
 3. 布尔 Boolean
    
     a. 两个值:true,false
-   
+
     b. 1字节
 
 4. 字符 Character
    
     a. 4字节
-   
+
     b. 表示一个Unicode标量值(Unicode Scalar Value)
 
 ##### 复合类型 Compound
@@ -121,15 +121,15 @@ fn main(){
 1. 元组 Tuple
    
     a. 固定长度
-   
+
     b. 可包含不同类型的数据
 
 2. 数组 Array
    
     a. 固定长度
-   
+
     b. 元素类型相同
-   
+
    ```rust
    fn main() {
        let tup1 = (100, 'A', false);
@@ -1582,6 +1582,93 @@ pub fn my_trait_derive(input: TokenStream) -> TokenStream {
 
 
 
+## 项目
+
+### 单文件项目
+
+#### 读取二进制文件，追加所有内容到文件末尾
+
+```rust
+// 内容复制
+use std::env;
+use std::fs::File;
+use std::io::{Read, Write, Seek, SeekFrom};
+use std::process;
+
+fn main() {
+    // 收集命令行参数
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        eprintln!("用法: {} <文件名> [重复次数]", args[0]);
+        eprintln!("示例: {} data.dat 100", args[0]);
+        process::exit(1);
+    }
+
+    let file_name = &args[1];
+    let repeat_count: usize = args.get(2)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(100);  // 默认重复 100 次
+
+    // 1. 读取原文件的全部内容
+    let content = match File::open(file_name) {
+        Ok(mut file) => {
+            let mut buffer = Vec::new();
+            if let Err(e) = file.read_to_end(&mut buffer) {
+                eprintln!("读取文件 '{}' 失败: {}", file_name, e);
+                process::exit(1);
+            }
+            buffer
+        }
+        Err(e) => {
+            eprintln!("无法打开文件 '{}': {}", file_name, e);
+            process::exit(1);
+        }
+    };
+
+    // 如果文件为空，直接退出（避免无意义操作）
+    if content.is_empty() {
+        eprintln!("文件为空，无需追加。");
+        return;
+    }
+
+    // 2. 以追加模式打开同一个文件
+    let mut file = match File::options()
+        .write(true)
+        .append(true)
+        .open(file_name)
+    {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("无法以追加模式打开文件 '{}': {}", file_name, e);
+            process::exit(1);
+        }
+    };
+
+    // 3. 将内容重复写入文件尾
+    for i in 0..repeat_count {
+        if let Err(e) = file.write_all(&content) {
+            eprintln!("第 {} 次写入失败: {}", i + 1, e);
+            process::exit(1);
+        }
+        // 可选：每次写入后刷盘，但批量 flush 更高效，在循环结束后统一 flush
+    }
+
+    // 4. 确保所有数据写入磁盘
+    if let Err(e) = file.flush() {
+        eprintln!("刷新缓冲区失败: {}", e);
+        process::exit(1);
+    }
+
+    println!("成功将文件内容重复追加 {} 次。", repeat_count);
+}
+```
+
+
+
+
+
+
+
 ## 抄书
 
 ### 面向加薪学习(http://www.go-edu.cn/)
@@ -1637,7 +1724,7 @@ Rust 是一门编译语言，因此它的效率可以媲美 C 或 C++ 语言。
    屏幕输出  rustc 1.59.0
    ```
 
-出现上面的提示，证明你的 Rust 环境安装好了。
+   出现上面的提示，证明你的 Rust 环境安装好了。
 
 #### 第3章 hello_rust
 
