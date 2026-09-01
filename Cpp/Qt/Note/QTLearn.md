@@ -120,9 +120,7 @@ int main(int argc, char *argv[]){
 }
 ```
 
-### 串口开发
 
-在.pro文件中添加 QT +=serialport
 
 #### 以hex形式显示收到的hex数据
 
@@ -141,9 +139,27 @@ QString hexString; for (int i = 0; i < data.size(); i++)
 //此时收到的hex数据就变成了字符串，可以显示到窗口信息中ui->textEdit->append(hexStream);
 ```
 
+
+
+
+
+
+
+### 串口开发
+
+在.pro文件中添加 QT +=serialport
+
+
+
 ### 网络开发
 
 在.pro文件中添加 QT +=network
+
+#### TCP CLient的数据发不出去
+
+Qt先把数据放到缓冲区再发，write只是将数据写进了缓冲区，在写入后调用flash()可以强制发送缓冲区内的数据。
+
+
 
 ### 数据类型
 
@@ -626,6 +642,49 @@ m_thread.requestInterruption(); //请求停止m_thread.wait();
 //等待
 m_thread.terminal(); //强制停止
 ```
+
+
+
+### Qt封装类
+
+#### QByteArray
+
+##### 高性能判断两个QByteArray是否互为反码
+
+```c++
+#include <QByteArray>
+#include <QtGlobal>  // 提供UChar类型
+
+// 判断两个QByteArray是否互为反码
+bool areByteArraysComplement(const QByteArray& a, const QByteArray& b)
+{
+	// 1. 长度不相等
+	if (a.size() != b.size())
+	{
+		return false;
+	}
+
+	// 2. 获取只读底层数据指针(无拷贝)
+	const uchar * pa = reinterpret_cast<const uchar*>(a.constData());
+	const uchar * pb = reinterpret_cast<const uchar*>(b.constData());
+	int len = a.size();
+
+	// 3. 逐字比较 a[i] == [~b[i] & 0xFF]
+	for (int i = 0; i < len; ++i)
+	{
+		if (pa[i] != static_cast<uchar>(~pb[i]))
+			return false;
+	}
+
+	return true;
+}
+```
+
+
+
+
+
+
 
 ### QSettings读写ini文件
 
