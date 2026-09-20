@@ -1199,11 +1199,11 @@ set_property IOSTANDARD LVCMOS33 [get_ports {LED_Counter[7]}]
 // );
 
 module uart_tx (
-    Clk,			// 时钟输入
-    Reset_n,		// 重置按钮
+    Clk,
+    Reset_n,
     Baud_sel,       // 波特率选择
     Send_en,        // 高电平触发一次发送
-    Data_byte,		// 要发送的数据
+    Data_byte,
 
     uart_tx,        // 数据发送，默认为高电平
     tx_done,        // 发送完成时输出一个时钟周期的高脉冲
@@ -1220,14 +1220,12 @@ module uart_tx (
     output reg tx_done;
     output reg uart_state;
 
-    // 时钟频率  50MHz晶振
+    // 时钟频率
     parameter CLOCK_FREQ = 50_000_000;
 
-    // 波特率计数最大值
+    // 波特率选择器
     reg [15:0] baud_cnt_max;
     
-    // 组合逻辑，使用 =
-    // 根据选择波特率，修改对应波特率的时钟计数最大值
     always @(*) begin
         case (Baud_sel)
             3'd0:   baud_cnt_max = CLOCK_FREQ / 9600 - 1;
@@ -1239,39 +1237,42 @@ module uart_tx (
         endcase
     end
 
-    // 状态机标识定义
+    // 状态机
     localparam IDLE = 2'b00;        // 空闲
     localparam START = 2'b01;       // 起始位
     localparam DATA = 2'b10;        // 数据位
     localparam STOP = 2'b11;        // 停止位
 
-    // 当前状态
+    // 状态
     reg [1:0] state; 
     // 波特率分频计数器
     reg [15:0] baud_cnt;
     // 数据位计数器
     reg [3:0] bit_cnt;
-    // 数据锁存器，待发送的数据缓存
+    // 待发送的数据缓存
     reg [7:0] data_reg;
 
     // 波特率分频完成标志
     wire baud_done = (baud_cnt == baud_cnt_max);
 
     // 波特率计数器
-    // 波特率计数器在非空闲状态时计数，计数到波特率最大值时重置为0
+    // 与 uart_rx 保持完全相同的计时结构，位周期为 (baud_cnt_max+1) 个时钟。
+    // 原写法有两个会累积误差的问题：baud_cnt 只在 state==IDLE 或 baud_done 时
+    // 清 0，而 state 是寄存器，IDLE->START 那一拍看到的还是旧值，计数从 1 开始；
+    // 并且只在 baud_done 时清 0 会使计数值在终值上多保持一拍。结果每帧实际发得
+    // 比标准位宽略长，背靠背连发时会与接收机的采样点逐渐错开。
+    wire counter_done = baud_done;
+
     always @(posedge Clk or negedge Reset_n) begin
         if(!Reset_n)
             baud_cnt <= 16'd0;
-        else if(state == IDLE)      
-            baud_cnt <= 16'd0;      // 空闲时清0
-        else if(baud_cnt == baud_cnt_max)
-            baud_cnt <= 16'd0;      // 计数到最大值，清0
+        else if(state == IDLE || counter_done)
+            baud_cnt <= 16'd0;      // IDLE 中保持 0；位周期结束装回 0
         else
             baud_cnt <= baud_cnt + 1'b1;
     end
 
     // 数据位计数器
-    // 在接收数据状态时计数，且波特率计数器达到时 +1，加到最大值时归零
     always @(posedge Clk or negedge Reset_n) begin
         if(!Reset_n)
             bit_cnt <= 4'd0;
@@ -1286,10 +1287,6 @@ module uart_tx (
     end
 
     // 主状态机
-    // 空闲状态时等待发送使能信号，等到后进入发送起始位状态
-    // 发送停止位时等待一个波特率计数周期，完成起始位发送，之后进入数据发送
-    // 数据发送状态等到位计数器到达最大值且波特率周期完成，表示数据发送完成，进入停止位状态
-    // 停止位等待一个波特率计数周期，停止位发送完成，回到空闲状态
     always @(posedge Clk or negedge Reset_n) begin
         if(!Reset_n)
             state <= IDLE;
@@ -1317,8 +1314,6 @@ module uart_tx (
     end
     
     // 输出逻辑
-    // 重置时发送为高电平，发送完成信号，共状态和数据锁存器都清0
-    // 工作时根据当前状态标识修改输出引脚的状态
     always @(posedge Clk or negedge Reset_n) begin
         if(!Reset_n) begin
             uart_tx <= 1'b1;   // 空闲时为高电平
@@ -1337,19 +1332,16 @@ module uart_tx (
                         uart_state <= 1'b1;         // 进入忙状态
                     end
                 end
-                
                 START: begin
                     uart_tx <= 1'b0;    // 发送起始位
                     tx_done <= 1'b0;
                     uart_state <= 1'b1;
                 end
-                
                 DATA: begin
                     uart_tx <= data_reg[bit_cnt];   // LSB先发
                     tx_done <= 1'b0;
                     uart_state <= 1'b1;
                 end
-                
                 STOP: begin
                     uart_tx <= 1'b1;    // 发送停止位
                     uart_state <= 1'b1;
@@ -1358,7 +1350,6 @@ module uart_tx (
                     else
                         tx_done <= 1'b0;
                 end
-                
                 default: begin
                     uart_tx <= 1'b1;
                     tx_done <= 1'b0;
@@ -1450,60 +1441,57 @@ endmodule
 实现接收串口数据，波特率四种可选，数据位8 停止位1 校验位none
 
 ```verilog
-// uart_rx.v
-`timescale 1ns/1ps
+// uart_rx.vs
+`timescale 1ns / 1ps
 
-// 选择波特率，串口数据发送模块，默认 数据位8 停止位1 校验位none
+// 串口数据接收模块， 默认 数据位8 停止位1 校验位none
 
 // 例化示例代码
 // reg Clk;
 // reg Reset_n;
 // reg [2:0] Baud_sel;
-// reg Send_en;
-// reg [7:0] Data;
-// wire uart_tx;
-// wire tx_done;
-// wire uart_state;
+// reg uart_rx;
+// wire reg [7:0] Data_out;
+// wire reg rx_done;
+// wire reg uart_state;
 
-// uart_tx your_inst_name(
+// uart_rx your_inst_name(
 //     .Clk(Clk),
 //     .Reset_n(Reset_n),
 //     .Baud_sel(Baud_sel),
-//     .Send_en(Send_en),
-//     .Data_byte(Data_byte),
-//     .uart_tx(uart_tx),
-//     .tx_done(tx_done),
+//     .uart_rx(uart_rx),
+
+//     .Data_out(Data_out),
+//     .rx_done(rx_done),
 //     .uart_state(uart_state)
 // );
 
-module uart_tx (
-    Clk,			// 时钟输入
-    Reset_n,		// 重置
-    Baud_sel,       // 波特率选择
-    Send_en,        // 高电平触发一次发送
-    Data_byte,
+module uart_rx(
+    Clk,
+    Reset_n,
+    Baud_sel,
+    uart_rx,
 
-    uart_tx,        // 数据发送，默认为高电平
-    tx_done,        // 发送完成时输出一个时钟周期的高脉冲
-    uart_state      // 0: 空闲  1: 发送中
-);
+    Data_out,
+    rx_done,
+    uart_state
+    );
+
 
     input Clk;
     input Reset_n;
     input [2:0]Baud_sel;
-    input Send_en;
-    input [7:0] Data_byte;
+    input uart_rx;
 
-    output reg uart_tx;
-    output reg tx_done;
+    output reg [7:0] Data_out;
+    output reg rx_done;
     output reg uart_state;
 
-    // 时钟频率
+    // 参数
     parameter CLOCK_FREQ = 50_000_000;
 
-    // 波特率选择器
+    // 波特率选择
     reg [15:0] baud_cnt_max;
-    
     always @(*) begin
         case (Baud_sel)
             3'd0:   baud_cnt_max = CLOCK_FREQ / 9600 - 1;
@@ -1515,32 +1503,71 @@ module uart_tx (
         endcase
     end
 
-    // 状态机
-    localparam IDLE = 2'b00;        // 空闲
-    localparam START = 2'b01;       // 起始位
-    localparam DATA = 2'b10;        // 数据位
-    localparam STOP = 2'b11;        // 停止位
+    // 同步uart_rx，消除亚稳态
+    reg rx_d0, rx_d1, rx_d2;
+    always @(posedge Clk or negedge Reset_n) begin
+        if(!Reset_n) begin
+            rx_d0 <= 1'b1;
+            rx_d1 <= 1'b1;
+            rx_d2 <= 1'b1;
+        end
+        else begin
+            rx_d0 <= uart_rx;
+            rx_d1 <= rx_d0;
+            rx_d2 <= rx_d1;
+        end
+    end
 
-    // 状态
-    reg [1:0] state; 
-    // 波特率分频计数器
+    // 下降沿检测（起始位）
+    wire rx_nedge = ((rx_d2 == 1'b1) && (rx_d1 == 1'b0));
+
+    // 起始位检测（电平方式）
+    // 关键：不能用"下降沿脉冲"来启动接收。接收完一帧后，回到 IDLE 的时刻正好
+    // 就是下一帧起始位的下降沿时刻（背靠背连续帧）。此时同步链输出的下降沿
+    // 脉冲只有 1 个时钟宽，很容易与 STOP->IDLE 的状态跳变撞在同一拍而丢失，
+    // 接收机随后就会把数据位的边沿误判成起始位，导致这一帧及后续全部错乱。
+    // 改为在 IDLE 中直接判断同步后的接收线是否为低：只要采样到低电平就认为
+    // 起始位已经开始，即使错过下降沿的那一拍也能正常起振，不会丢帧。
+    wire start_detect = (rx_d2 == 1'b0);
+
+    // 状态机
+    localparam IDLE = 2'b00;
+    localparam START = 2'b01;
+    localparam DATA = 2'b10;
+    localparam STOP = 2'b11;
+
+    reg [1:0] state;
     reg [15:0] baud_cnt;
-    // 数据位计数器
     reg [3:0] bit_cnt;
-    // 待发送的数据缓存
     reg [7:0] data_reg;
 
-    // 波特率分频完成标志
+    // 计数终值：从 0 计到 baud_cnt_max 共 (baud_cnt_max+1) = CLOCK_FREQ/波特率
+    // 个时钟，正好是一个位周期。
     wire baud_done = (baud_cnt == baud_cnt_max);
+    // 采样点：每位周期的中点
+    wire sample_en = (baud_cnt == (baud_cnt_max >> 1));
 
     // 波特率计数器
+    // baud_cnt_max = CLOCK_FREQ/波特率 - 1，位周期为 (baud_cnt_max+1) 个时钟
+    // （115200 时约 5208 个时钟 = 104.16us，标准取值）。同步链带来的 1~2 个时钟
+    // 偏移相对 4.34us 的位宽容限可以忽略，关键是收发双方采用同一结构、误差不会
+    // 逐字节累积。
+    //
+    // 原来的写法有两个会累积误差的问题：
+    //   1) baud_cnt 只在 state==IDLE 或 baud_done 时清 0，而 state 是寄存器，
+    //      在 IDLE->START 那一拍计数器看到的仍是旧的 IDLE 值，计数从 1 而不是 0
+    //      开始，位周期被拉长；
+    //   2) 只在 baud_done 时清 0 会让计数值在终值上多保持一拍。
+    // 两者叠加后接收机每个字节的采样点都会向后漂移，背靠背连续帧（PC 串口助手
+    // 一次发多个字节）从第 2 个字节起就采到错误的位。改为在 IDLE 中保持 0、
+    // 位周期结束的那一拍装回 0，位周期长度就固定下来了。
+    wire counter_done = baud_done;
+
     always @(posedge Clk or negedge Reset_n) begin
         if(!Reset_n)
             baud_cnt <= 16'd0;
-        else if(state == IDLE)      
-            baud_cnt <= 16'd0;      // 空闲时清0
-        else if(baud_cnt == baud_cnt_max)
-            baud_cnt <= 16'd0;      // 计数到最大值，清0
+        else if(state == IDLE || counter_done)
+            baud_cnt <= 16'd0;          // IDLE 中保持 0；位周期结束装回 0
         else
             baud_cnt <= baud_cnt + 1'b1;
     end
@@ -1566,71 +1593,76 @@ module uart_tx (
         else begin
             case(state)
                 IDLE: begin
-                    if(Send_en)
-                        state <= START;
+                    if(start_detect)
+                        state <= START; 
                 end
                 START: begin
                     if(baud_done)
-                        state <= DATA;
+                        state <= DATA;      // 在位周期末跳转，DATA 中的采样点正好落在数据位中点
                 end
                 DATA: begin
-                    if(baud_done &&(bit_cnt == 4'd7))
-                        state <= STOP;
+                    if(baud_done && (bit_cnt == 4'd7))
+                        state <= STOP; 
                 end
                 STOP: begin
-                    if(baud_done)
+                    // 为停止位计满一个完整位周期后再回 IDLE。
+                    if (baud_done)
                         state <= IDLE;
                 end
-                default: state <= state;
+                default: state <= IDLE;
             endcase
-        end
+        end 
     end
-    
-    // 输出逻辑
+
+    // 输出逻辑：数据采样
     always @(posedge Clk or negedge Reset_n) begin
         if(!Reset_n) begin
-            uart_tx <= 1'b1;   // 空闲时为高电平
-            tx_done <= 1'b0;
-            uart_state <= 1'b0; // 空闲
             data_reg <= 8'd0;
+            Data_out <= 8'd0;
+            rx_done <= 1'b0;
+            uart_state <= 1'b0;
         end
-        else begin 
+        else begin
+            // 默认清零完成标志
+            rx_done <= 1'b0;
+
             case(state)
                 IDLE: begin
-                    uart_tx <= 1'b1;
-                    tx_done <= 1'b0;
                     uart_state <= 1'b0;
-                    if(Send_en) begin
-                        data_reg <= Data_byte;      // 锁存待发送的数据
-                        uart_state <= 1'b1;         // 进入忙状态
+                end
+
+                START: begin
+                    uart_state <= 1'b1;
+                end
+
+                DATA: begin
+                    uart_state <= 1'b1;
+                    if(sample_en)
+                        data_reg[bit_cnt] <= rx_d2;        // 拿取当前数据
+                end
+
+                STOP: begin
+                    uart_state <= 1'd1;
+                    if(baud_done) begin
+                        // 此时停止位已完整接收一个位周期，正好是一帧结束的时刻：
+                        // 输出数据并使 rx_done 拉高一个时钟周期。
+                        // 该脉冲比原实现（停位中点）晚半个位周期，此时线上字节间隔
+                        // 最多只走过 0.5 个位周期，因此 uart_loopback 中
+                        // (!tx_state) 的空闲判断仍然成立，不会误丢字节。
+                        Data_out <= data_reg;       // 接收到的数据，放到输出端口
+                        rx_done <= 1'b1;            // 接收完成，一个时钟周期
                     end
                 end
-                START: begin
-                    uart_tx <= 1'b0;    // 发送起始位
-                    tx_done <= 1'b0;
-                    uart_state <= 1'b1;
-                end
-                DATA: begin
-                    uart_tx <= data_reg[bit_cnt];   // LSB先发
-                    tx_done <= 1'b0;
-                    uart_state <= 1'b1;
-                end
-                STOP: begin
-                    uart_tx <= 1'b1;    // 发送停止位
-                    uart_state <= 1'b1;
-                    if(baud_done)
-                        tx_done <= 1'b1;
-                    else
-                        tx_done <= 1'b0;
-                end
+
                 default: begin
-                    uart_tx <= 1'b1;
-                    tx_done <= 1'b0;
+                    // 默认状态  串口空闲，接收完成0
                     uart_state <= 1'b0;
+                    rx_done <= 1'b0;
                 end
             endcase
         end
     end
+
 endmodule
 
 ```
@@ -1725,7 +1757,143 @@ endmodule
 上面的模块只进行了仿真测试，这一步编写一个模块调用串口发送和接收模块，做板级验证。
 这里实现一个回环，收到什么就向外转发什么。同时用8个LED灯表示收到的内容。
 
+```verilog
+// uart_loopback.v
+`timescale 1ns / 1ps
 
+
+module uart_loopback(
+    Clk,
+    Reset_n,
+    uart_rx_pin,
+
+    uart_tx_pin,
+    Leds
+    );
+
+    // 端口声明
+    input Clk;
+    input Reset_n;
+    input uart_rx_pin;
+
+    output uart_tx_pin;
+    output reg[7:0] Leds;
+
+    // 时钟
+    parameter CLOCK_FREQ = 50_000_000;
+
+    // 波特率选择
+    reg [2:0] baud_sel = 4;
+
+    // RX模块
+    wire [7:0] rx_data;
+    wire rx_done;
+    wire rx_state;
+
+    // TX模块
+    reg [7:0] tx_data;
+    reg tx_send;
+    wire tx_done;
+    wire tx_state;
+
+    // 例化接收模块
+    uart_rx #(
+        .CLOCK_FREQ(CLOCK_FREQ)
+    ) uart_rx_inst (
+        .Clk(Clk),
+        .Reset_n(Reset_n),
+        .Baud_sel(baud_sel),
+        .uart_rx(uart_rx_pin),
+
+        .Data_out(rx_data),
+        .rx_done(rx_done),
+        .uart_state(rx_state)
+    );
+
+    // 例化发送模块
+    uart_tx #(
+        .CLOCK_FREQ(CLOCK_FREQ)
+    ) uart_tx_inst (
+        .Clk(Clk),
+        .Reset_n(Reset_n),
+        .Baud_sel(baud_sel),
+        .Send_en(tx_send),
+        .Data_byte(tx_data),
+        .uart_tx(uart_tx_pin),
+        .tx_done(tx_done),
+        .uart_state(tx_state)
+    );
+
+    // 桥接逻辑：收到一个字节 -> 触发发送
+    always @(posedge Clk or negedge Reset_n) begin
+        if(!Reset_n) begin
+            tx_data <= 8'd0;
+            tx_send <= 1'b0;
+        end
+        else begin
+            if(rx_done && !tx_state && !tx_send) begin
+                // 收到新字节，且发送模块空闲 -> 锁存数据并产生单周期脉冲
+                tx_data <= rx_data;
+                tx_send <= 1'b1;
+            end
+            else if(tx_send) begin
+                // 一个时钟周期后清除
+                tx_send <= 1'b0;
+            end
+        end
+    end
+
+
+    // LED提示：每收到一个字节就显示到8个LED上
+    always @(posedge Clk or negedge Reset_n) begin
+        if(!Reset_n)
+            Leds <= 8'd0;
+        else if (rx_done)
+            Leds <= rx_data;
+    end
+
+
+
+endmodule
+
+```
+
+```verilog
+# XC7Z015 EDA开发板插在GPIO1上
+
+# 引脚定义
+set_property PACKAGE_PIN L5 [get_ports Clk]
+set_property PACKAGE_PIN R4 [get_ports Reset_n]
+set_property PACKAGE_PIN W18 [get_ports uart_rx_pin]
+set_property PACKAGE_PIN V18 [get_ports uart_tx_pin]
+
+# 电平标准
+set_property IOSTANDARD LVCMOS33 [get_ports Clk]
+set_property IOSTANDARD LVCMOS33 [get_ports Reset_n]
+set_property IOSTANDARD LVCMOS33 [get_ports uart_rx_pin]
+set_property IOSTANDARD LVCMOS33 [get_ports uart_tx_pin]
+
+# 引脚定义
+set_property PACKAGE_PIN AB14 [get_ports {Leds[0]}]
+set_property PACKAGE_PIN AA14 [get_ports {Leds[1]}]
+set_property PACKAGE_PIN AA15 [get_ports {Leds[2]}]
+set_property PACKAGE_PIN AA12 [get_ports {Leds[3]}]
+set_property PACKAGE_PIN R17 [get_ports {Leds[4]}]
+set_property PACKAGE_PIN T17 [get_ports {Leds[5]}]
+set_property PACKAGE_PIN U19 [get_ports {Leds[6]}]
+set_property PACKAGE_PIN V19 [get_ports {Leds[7]}]
+
+# 电平标准
+set_property IOSTANDARD LVCMOS33 [get_ports {Leds[0]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Leds[1]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Leds[2]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Leds[3]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Leds[4]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Leds[5]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Leds[6]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {Leds[7]}]
+
+```
 
 
 
